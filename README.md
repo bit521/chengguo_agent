@@ -9,9 +9,15 @@
 
 #### 安装教程
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+```sh
+# 创建环境
+conda create -n chenguang python=3.13
+# 激活环境
+conda activate chenguang
+
+# 安装依赖
+pip install -r requirements.txt
+```
 
 #### 使用说明
 
