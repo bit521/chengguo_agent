@@ -25,7 +25,7 @@ AsyncSessionLocal = async_sessionmaker(
 
 # 3. 定义异步获取数据库会话连接
 async def get_db() -> AsyncSession:
-    """ FastAPI 依赖注入，获取数据库会话连接 """
+    """ FastAPI 依赖注入，获取数据库会话连接 Depends(get_db) """
     async with AsyncSessionLocal() as session:
         try:
             yield session  # 返回的session别人用
