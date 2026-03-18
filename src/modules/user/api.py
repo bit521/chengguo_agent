@@ -1,9 +1,10 @@
+from src.modules.role.schema import RoleRead
 from src.modules.user.model import User
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.infra.database import get_db
 from src.core.base_schema import ResponseSchema
-from src.modules.user.schema import UserCreate, UserRead
+from src.modules.user.schema import UserCreate, UserRead, UserAssignRoles, UserWithRolesRead
 from src.modules.user.service import UserService
 from src.core.deps import get_current_user
 
@@ -33,13 +34,13 @@ async def get_current_user(
     
     return ResponseSchema(data=UserRead.model_validate(current_user))
 
-@router.get("/{user_id}", response_model=ResponseSchema[UserRead])
+@router.get("/{user_id}", response_model=ResponseSchema[UserWithRolesRead])
 async def get_user(
     user_id: int,
     svc: UserService = Depends(get_user_service),
 ):
     user = await svc.get_user(user_id)
-    return ResponseSchema(data=UserRead.model_validate(user))
+    return ResponseSchema(data=UserWithRolesRead.model_validate(user))
 
 
 @router.get("", response_model=ResponseSchema[list[UserRead]])
@@ -51,4 +52,24 @@ async def list_users(
     users = await svc.list_users(offset, limit)
     return ResponseSchema(data=[UserRead.model_validate(u) for u in users])
 
+# PUT	/api/v1/users/{user_id}/roles	给用户分配角色
+@router.put("/{user_id}/roles", response_model=ResponseSchema[UserWithRolesRead])
+async def user_assign_roles(
+    user_id: int,
+    roles: UserAssignRoles,
+    svc: UserService = Depends(get_user_service),
+):
+    user = await svc.assign_roles(user_id, roles.role_ids)
+    return ResponseSchema(data=UserWithRolesRead.model_validate(user))
 
+
+# GET	/api/v1/users/{user_id}/roles	查看用户的角色列表
+@router.get("/{user_id}/roles",response_model=ResponseSchema[list[RoleRead]])
+async def get_user_roles_list(
+    user_id: int,
+    svc: UserService = Depends(get_user_service),
+):
+    user = await svc.get_user_with_roles(user_id)
+    if user.roles:
+        return ResponseSchema(data=[RoleRead.model_validate(r) for r in user.roles])
+    return ResponseSchema(data=[])

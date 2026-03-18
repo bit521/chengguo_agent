@@ -19,6 +19,12 @@ conda activate chenguang
 pip install -r requirements.txt
 ```
 
+
+## 指定端口启动
+```
+uvicorn src.main:app --port 8080 --reload
+```
+
 #### 使用说明
 
 1.  xxxx

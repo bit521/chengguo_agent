@@ -31,6 +31,9 @@ if config.config_file_name is not None:
 # 没自己写一个orm模块就可以导入模块中的Base类
 # 导入 每个模块的orm模型类
 import src.modules.user.model
+import src.modules.permission.model
+import src.modules.role.model
+
 from src.core.base_model import Base
 target_metadata = Base.metadata
 
