@@ -7,6 +7,7 @@ from src.infra.database import engine
 from src.modules.user.api import router as user_router
 from src.modules.captcha.api import router as captcha_router
 from src.modules.auth.api import router as auth_router
+from loguru import logger
 
 
 

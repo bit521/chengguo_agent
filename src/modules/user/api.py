@@ -1,5 +1,3 @@
-import code
-from src.core.exceptions import BizException
 from src.modules.user.model import User
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession

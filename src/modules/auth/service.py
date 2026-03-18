@@ -8,6 +8,7 @@ from src.core.exceptions import BizException
 from src.utils.password_utils import verify_password
 from src.utils.jwt_utils import encode_jwt
 from datetime import datetime, timezone
+from loguru import logger
 
 
 # 未来推荐，每个svc 注入 db: AsyncSession 和 redis: Redis
@@ -41,11 +42,11 @@ class AuthService:
         user.last_login = datetime.now()
         await self.user_repo.update(user)
 
-        # 4. 生成token
-        payload = {"sub": user.id, "username": user.username, "email": user.email}
-        print(f"生成token的payload: {payload}")
+        # 4. 生成token: 强制必须 sub 是str
+        payload = {"sub": str(user.id), "username": user.username, "email": user.email}
+
         token = encode_jwt(payload)
-        print(f"生成token: {token}")
+        logger.info(f"生成token: {token}")
 
 
 

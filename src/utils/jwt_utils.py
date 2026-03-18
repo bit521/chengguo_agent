@@ -17,6 +17,8 @@ def encode_jwt(payload: dict) -> str:
     payload_copy["exp"] = datetime.now(timezone.utc) + timedelta(minutes=30)
     payload_copy["iat"] = datetime.now(timezone.utc)
 
+    print(f"准备encode payload {payload_copy}")
+
     token = jwt.encode(payload_copy, key =SECRET_KEY, algorithm=ALGORITHM)
     print(f"生成完成的token: {token}")
     return token
