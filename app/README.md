@@ -9,6 +9,7 @@ React 18 + TypeScript + Vite + Shadcn UI + Tailwind CSS + React Router
 ## 快速开始
 
 ```bash
+#  node版本： v22.18.0
 cd chenguang-agent-platform
 npm install
 npm run dev
