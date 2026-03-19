@@ -61,3 +61,8 @@ class PermissionService:
         # 直接删除
         #
         await self.repo.delete_by_id(permission_id)
+
+    async def search_page(self, offset: int,
+                          limit: int,
+                          keyword: str | None) -> tuple[list[Permission], int]:
+        return await self.repo.search_page(offset, limit, keyword)
