@@ -34,6 +34,11 @@ import src.modules.user.model
 import src.modules.permission.model
 import src.modules.role.model
 import src.modules.provider.model
+import src.modules.model.model
+import src.modules.prompt.model
+import src.modules.knowledge.model
+import src.modules.tool.model
+import src.modules.agent.model
 
 from src.core.base_model import Base
 target_metadata = Base.metadata

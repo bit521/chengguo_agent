@@ -12,7 +12,11 @@ from src.modules.auth.api import router as auth_router
 from src.modules.permission.api import router as permission_router
 from src.modules.role.api import router as role_router
 from src.modules.provider.api import router as provider_router
-
+from src.modules.model.api import router as model_router
+from src.modules.prompt.api import router as prompt_router
+from src.modules.knowledge.api import router as knowledge_router
+from src.modules.tool.api import router as tool_router
+from src.modules.agent.api import router as agent_router
 from loguru import logger
 
 
@@ -64,6 +68,11 @@ def create_app() -> FastAPI:
     app.include_router(role_router, prefix="/api/v1")
 
     app.include_router(provider_router, prefix="/api/v1")
+    app.include_router(model_router, prefix="/api/v1")
+    app.include_router(prompt_router, prefix="/api/v1")
+    app.include_router(knowledge_router, prefix="/api/v1")
+    app.include_router(tool_router, prefix="/api/v1")
+    app.include_router(agent_router, prefix="/api/v1")
 
     return app
 
