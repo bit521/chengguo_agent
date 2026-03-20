@@ -50,10 +50,13 @@ class ApiClient {
   }
 
   async post<T>(path: string, body?: unknown): Promise<T> {
+    const isFormData = body instanceof FormData
+    const headers = this.getHeaders()
+    if (isFormData) delete headers['Content-Type'] // let browser set multipart boundary
     const res = await fetch(`${this.baseUrl}${path}`, {
       method: 'POST',
-      headers: this.getHeaders(),
-      body: body ? JSON.stringify(body) : undefined,
+      headers,
+      body: isFormData ? body : body ? JSON.stringify(body) : undefined,
     })
     return this.handleResponse<T>(res)
   }

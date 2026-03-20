@@ -1,14 +1,18 @@
-from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi import APIRouter, Depends, UploadFile, File, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.modules.user.model import User
+from src.core.deps import get_current_user
 from src.infra.database import get_db
 from src.core.base_schema import ResponseSchema, PageResult
 from src.core.deps import PageParams
 from src.modules.knowledge.schema import (
-    KnowledgeBaseCreate, KnowledgeBaseUpdate, KnowledgeBaseRead,
+    KnowledgeBaseCreate, KnowledgeBaseUpdate, KnowledgeBaseConfigUpdate, KnowledgeBaseRead,
     DocumentRead, SegmentRead, SegmentUpdate,
+    RetrievalTestRequest, RetrievalTestResult,
 )
 from src.modules.knowledge.service import KnowledgeService
-
+from loguru import logger
 router = APIRouter(prefix="/knowledge-bases", tags=["知识库管理"])
 
 
@@ -54,6 +58,15 @@ async def update_kb(
     return ResponseSchema(data=result)
 
 
+@router.put("/{kb_id}/config", response_model=ResponseSchema[KnowledgeBaseRead], summary="更新分段/检索配置")
+async def update_kb_config(
+    kb_id: int, data: KnowledgeBaseConfigUpdate,
+    svc: KnowledgeService = Depends(get_knowledge_service),
+):
+    result = await svc.update_kb_config(kb_id, data)
+    return ResponseSchema(data=result)
+
+
 @router.delete("/{kb_id}", response_model=ResponseSchema, summary="删除知识库")
 async def delete_kb(
     kb_id: int,
@@ -68,29 +81,22 @@ async def delete_kb(
 @router.post("/{kb_id}/documents", response_model=ResponseSchema[DocumentRead], summary="上传文档")
 async def upload_document(
     kb_id: int,
+    background_tasks: BackgroundTasks,
+    user: User = Depends(get_current_user),
     file: UploadFile = File(...),
     svc: KnowledgeService = Depends(get_knowledge_service),
 ):
-    # 1. 获取文件信息
-    file_name = file.filename
-    file_type = file_name.rsplit(".", 1)[-1] if "." in file_name else "unknown"
-    content = await file.read()
-    file_size = f"{len(content) / (1024 * 1024):.2f} MB"
-
-    # 2. TODO: 上传到 MinIO
-    # from src.infra.minio_client import upload_file
-    # file_path = await upload_file(f"knowledge/{kb_id}/{file_name}", content)
-    file_path = f"knowledge/{kb_id}/{file_name}"  # 临时占位
-
-    # 3. 记录到数据库
-    result = await svc.upload_document(
+    file_bytes = await file.read()
+    logger.info(f"上传文档: {file.filename} ({file.content_type})")
+    resp = await svc.upload_document(
         kb_id=kb_id,
-        file_name=file_name,
-        file_type=file_type,
-        file_size=file_size,
-        file_path=file_path,
+        file_name=file.filename,
+        file_type=file.content_type,
+        file_bytes=file_bytes,
+        current_user=str(user.id),
+        background_tasks=background_tasks,
     )
-    return ResponseSchema(data=result)
+    return ResponseSchema(data=resp)
 
 
 @router.get("/{kb_id}/documents", response_model=ResponseSchema[PageResult[DocumentRead]], summary="文档列表")
@@ -110,6 +116,26 @@ async def delete_document(
 ):
     await svc.delete_document(kb_id, doc_id)
     return ResponseSchema(message="删除成功")
+
+
+@router.post("/{kb_id}/documents/{doc_id}/retry", response_model=ResponseSchema[DocumentRead], summary="重试失败文档")
+async def retry_document(
+    kb_id: int, doc_id: int,
+    background_tasks: BackgroundTasks,
+    svc: KnowledgeService = Depends(get_knowledge_service),
+):
+    result = await svc.retry_document(kb_id, doc_id, background_tasks)
+    return ResponseSchema(data=result)
+
+
+@router.get("/{kb_id}/documents/{doc_id}/segments", response_model=ResponseSchema[PageResult[SegmentRead]], summary="文档分段列表")
+async def list_document_segments(
+    kb_id: int, doc_id: int,
+    params: PageParams = Depends(),
+    svc: KnowledgeService = Depends(get_knowledge_service),
+):
+    page_result = await svc.list_document_segments(kb_id, doc_id, params)
+    return ResponseSchema(data=page_result)
 
 
 # ===== 分段管理 =====
@@ -140,3 +166,12 @@ async def delete_segment(
 ):
     await svc.delete_segment(kb_id, seg_id)
     return ResponseSchema(message="删除成功")
+
+
+@router.post("/{kb_id}/retrieval-test", response_model=ResponseSchema[list[RetrievalTestResult]], summary="检索测试")
+async def retrieval_test(
+    kb_id: int, data: RetrievalTestRequest,
+    svc: KnowledgeService = Depends(get_knowledge_service),
+):
+    results = await svc.retrieval_test(kb_id, data)
+    return ResponseSchema(data=results)

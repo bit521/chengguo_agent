@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
+from src.infra.minio_client import ensure_bucket_exists
 from src.core.config import get_settings
 from src.middlewares.logging import LoggingMiddleware
 from src.core.exceptions import register_exception_handlers
@@ -30,6 +31,12 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     logger.info(f"{settings.APP_NAME} 启动.. | 使用环境： {settings.APP_ENV}")
     # 应用启动时执行
+    # 确保 MinIO 桶的存在
+    try:
+        ensure_bucket_exists()
+    except Exception as e:
+        logger.error(f"minio 桶创建失败，文件上传功能将无法使用：{e}")
+
     yield
     # 应用关闭时执行
     # 关闭数据库连接池
@@ -41,16 +48,19 @@ def create_app() -> FastAPI:
     settings = get_settings()
 
     # 创建应用
+    # 注册生命周期管理器
     app = FastAPI(title=settings.APP_NAME, 
                   version="1.0.0",
                   debug=settings.APP_DEBUG,
+                  lifespan=lifespan,
                   )
-    
+
+
     # 注册中间件
     app.add_middleware(LoggingMiddleware)
     # 注册跨域中间件
     app.add_middleware(CORSMiddleware,
-                       allow_origins=["*"],
+                       allow_origins=["http://localhost:3000","http://localhost:5173"],
                        allow_credentials=True,
                        allow_methods=["*"],
                        allow_headers=["*"])

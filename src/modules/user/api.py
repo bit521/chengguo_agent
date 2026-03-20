@@ -1,4 +1,4 @@
-from core.deps import PageParams
+from src.core.deps import PageParams
 from src.modules.role.schema import RoleRead
 from src.modules.user.model import User
 from fastapi import APIRouter, Depends

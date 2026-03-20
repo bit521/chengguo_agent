@@ -2,8 +2,8 @@ from fastapi import  APIRouter
 from fastapi.params import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.base_schema import PageResult
-from core.deps import PageParams
+from src.core.base_schema import PageResult
+from src.core.deps import PageParams
 from src.modules.permission.schema import PermissionCreate, PermissionUpdate
 from src.infra.database import get_db
 from src.core.base_schema import ResponseSchema

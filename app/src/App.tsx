@@ -47,7 +47,7 @@ function App() {
           {/* Prompt Routes */}
           <Route path="prompts" element={<PromptList />} />
           <Route path="prompts/create" element={<PromptCreate />} />
-          <Route path="prompts/:id" element={<PromptCreate />} />
+          <Route path="prompts/:id/edit" element={<PromptCreate />} />
           <Route path="prompts/:id/versions" element={<PromptVersions />} />
           
           {/* Knowledge Routes */}
