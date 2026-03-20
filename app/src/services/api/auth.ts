@@ -44,11 +44,11 @@ async function rawGet<T>(path: string): Promise<T> {
 
 export const apiAuthService = {
   async getCaptcha(): Promise<CaptchaResponse> {
-    return rawGet<CaptchaResponse>('/v1/captcha')
+    return rawGet<CaptchaResponse>('/captcha')
   },
 
   async login(data: LoginRequest): Promise<TokenResponse> {
-    const result = await rawPost<TokenResponse>('/v1/auth/login', data)
+    const result = await rawPost<TokenResponse>('/auth/login', data)
     tokenStorage.set(result.access_token)
     return result
   },

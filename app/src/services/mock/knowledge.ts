@@ -1,202 +1,107 @@
-import type { PaginatedResponse } from '../types/common';
-import type { KnowledgeBase, Document, Segment } from '../types/knowledge';
-import { mockKnowledgeBases, mockDocuments, mockSegments } from './data/knowledge';
+import type { KnowledgeBaseRead, DocumentRead, SegmentRead, PageResult } from '../api/knowledge';
+
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const mockKBs: KnowledgeBaseRead[] = [
+  { id: 1, name: '产品知识库', description: '产品相关文档', status: 'ready', document_count: 12, segment_count: 480, embedding_model: 'text-embedding-ada-002', created_by: 'admin', created_at: '2024-01-10T10:00:00Z', updated_at: '2024-03-01T08:00:00Z' },
+  { id: 2, name: '技术文档库', description: '技术规范和API文档', status: 'ready', document_count: 8, segment_count: 320, embedding_model: 'text-embedding-ada-002', created_by: 'admin', created_at: '2024-01-20T10:00:00Z', updated_at: '2024-03-05T08:00:00Z' },
+  { id: 3, name: '客服FAQ库', description: '常见问题解答', status: 'indexing', document_count: 5, segment_count: 150, embedding_model: 'text-embedding-3-small', created_by: 'admin', created_at: '2024-02-01T10:00:00Z', updated_at: '2024-03-10T08:00:00Z' },
+  { id: 4, name: '法律合规库', description: '法律法规文件', status: 'ready', document_count: 20, segment_count: 1200, embedding_model: 'text-embedding-ada-002', created_by: 'admin', created_at: '2024-02-15T10:00:00Z', updated_at: '2024-03-08T08:00:00Z' },
+  { id: 5, name: '培训材料库', description: '员工培训资料', status: 'empty', document_count: 0, segment_count: 0, embedding_model: 'text-embedding-ada-002', created_by: 'admin', created_at: '2024-03-01T10:00:00Z', updated_at: '2024-03-01T10:00:00Z' },
+  { id: 6, name: '市场调研库', description: '市场分析报告', status: 'error', document_count: 3, segment_count: 0, embedding_model: 'text-embedding-3-small', created_by: 'admin', created_at: '2024-02-20T10:00:00Z', updated_at: '2024-03-12T08:00:00Z' },
+];
+
+const mockDocuments: DocumentRead[] = [
+  { id: 1, knowledge_base_id: 1, file_name: '产品手册v2.pdf', file_type: 'pdf', file_size: '2.4MB', status: 'completed', segment_count: 45, word_count: 12000, uploaded_by: 'admin', uploaded_at: '2024-01-10T10:00:00Z' },
+  { id: 2, knowledge_base_id: 1, file_name: '功能说明.docx', file_type: 'docx', file_size: '1.2MB', status: 'completed', segment_count: 30, word_count: 8000, uploaded_by: 'admin', uploaded_at: '2024-01-15T10:00:00Z' },
+  { id: 3, knowledge_base_id: 2, file_name: 'API文档.md', file_type: 'md', file_size: '0.5MB', status: 'completed', segment_count: 60, word_count: 15000, uploaded_by: 'admin', uploaded_at: '2024-01-20T10:00:00Z' },
+];
+
+const mockSegments: SegmentRead[] = [
+  { id: 1, knowledge_base_id: 1, document_id: 1, content: '产品概述：本产品是一款智能AI助手...', word_count: 200, token_count: 300, position: 1, hit_count: 15, created_at: '2024-01-10T10:00:00Z', updated_at: '2024-01-10T10:00:00Z' },
+  { id: 2, knowledge_base_id: 1, document_id: 1, content: '主要功能：支持多轮对话、知识检索...', word_count: 180, token_count: 270, position: 2, hit_count: 8, created_at: '2024-01-10T10:00:00Z', updated_at: '2024-01-10T10:00:00Z' },
+];
 
 export const mockKnowledgeService = {
-  // 获取知识库列表
-  async getKnowledgeBases(params?: {
-    page?: number;
-    pageSize?: number;
-    search?: string;
-    type?: string;
-    status?: string;
-  }): Promise<PaginatedResponse<KnowledgeBase>> {
-    let filtered = [...mockKnowledgeBases];
-
-    if (params?.search) {
-      const search = params.search.toLowerCase();
-      filtered = filtered.filter(
-        (kb) =>
-          kb.name.toLowerCase().includes(search) ||
-          kb.description.toLowerCase().includes(search)
-      );
+  async getKnowledgeBases(params?: { page?: number; page_size?: number; keyword?: string }): Promise<PageResult<KnowledgeBaseRead>> {
+    await delay(300);
+    let filtered = [...mockKBs];
+    if (params?.keyword) {
+      filtered = filtered.filter(kb => kb.name.includes(params.keyword!) || (kb.description || '').includes(params.keyword!));
     }
-
-    if (params?.type) {
-      filtered = filtered.filter((kb) => kb.type === params.type);
-    }
-
-    if (params?.status) {
-      filtered = filtered.filter((kb) => kb.status === params.status);
-    }
-
     const page = params?.page || 1;
-    const pageSize = params?.pageSize || 10;
-    const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-
-    return {
-      data: filtered.slice(start, end),
-      total: filtered.length,
-      page,
-      pageSize,
-    };
+    const page_size = params?.page_size || 10;
+    const start = (page - 1) * page_size;
+    return { items: filtered.slice(start, start + page_size), total: filtered.length, page, page_size };
   },
 
-  // 获取知识库详情
-  async getKnowledgeBase(id: string): Promise<{ data: KnowledgeBase }> {
-    const kb = mockKnowledgeBases.find((k) => k.id === id);
-    if (!kb) {
-      throw new Error('知识库不存在');
-    }
-    return { data: kb };
+  async getKnowledgeBase(id: number): Promise<KnowledgeBaseRead> {
+    await delay(200);
+    const kb = mockKBs.find(k => k.id === id);
+    if (!kb) throw new Error('知识库不存在');
+    return kb;
   },
 
-  // 创建知识库
-  async createKnowledgeBase(data: Partial<KnowledgeBase>): Promise<KnowledgeBase> {
-    const newKb: KnowledgeBase = {
-      id: `kb-${Date.now()}`,
-      name: data.name || '',
-      description: data.description || '',
-      type: data.type || 'document',
-      status: 'active',
-      documentCount: 0,
-      segmentCount: 0,
-      vectorCount: 0,
-      storageSize: 0,
-      embeddingModel: data.embeddingModel || 'text-embedding-ada-002',
-      chunkSize: data.chunkSize || 500,
-      chunkOverlap: data.chunkOverlap || 50,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      createdBy: 'current-user',
-      tags: data.tags || [],
-    };
+  async createKnowledgeBase(data: any): Promise<KnowledgeBaseRead> {
+    await delay(400);
+    const newKb: KnowledgeBaseRead = { id: mockKBs.length + 1, name: data.name, description: data.description || null, status: 'empty', document_count: 0, segment_count: 0, embedding_model: data.embedding_model || 'text-embedding-ada-002', created_by: 'admin', created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    mockKBs.push(newKb);
     return newKb;
   },
 
-  // 更新知识库
-  async updateKnowledgeBase(id: string, data: Partial<KnowledgeBase>): Promise<KnowledgeBase> {
-    const kb = await this.getKnowledgeBase(id);
-    return {
-      ...kb,
-      ...data,
-      updatedAt: new Date().toISOString(),
-    };
+  async updateKnowledgeBase(id: number, data: any): Promise<KnowledgeBaseRead> {
+    await delay(300);
+    const idx = mockKBs.findIndex(k => k.id === id);
+    if (idx === -1) throw new Error('知识库不存在');
+    mockKBs[idx] = { ...mockKBs[idx], ...data, updated_at: new Date().toISOString() };
+    return mockKBs[idx];
   },
 
-  // 删除知识库
-  async deleteKnowledgeBase(id: string): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, 500));
+  async deleteKnowledgeBase(id: number): Promise<void> {
+    await delay(300);
+    const idx = mockKBs.findIndex(k => k.id === id);
+    if (idx !== -1) mockKBs.splice(idx, 1);
   },
 
-  // 获取文档列表
-  async getDocuments(knowledgeBaseId: string, params?: {
-    page?: number;
-    pageSize?: number;
-    search?: string;
-    status?: string;
-  }): Promise<PaginatedResponse<Document>> {
-    let filtered = mockDocuments.filter((d) => d.knowledgeBaseId === knowledgeBaseId);
-
-    if (params?.search) {
-      const search = params.search.toLowerCase();
-      filtered = filtered.filter((d) => d.fileName.toLowerCase().includes(search));
+  async getDocuments(kbId: number, params?: { page?: number; page_size?: number; keyword?: string }): Promise<PageResult<DocumentRead>> {
+    await delay(300);
+    let filtered = mockDocuments.filter(d => d.knowledge_base_id === kbId);
+    if (params?.keyword) {
+      filtered = filtered.filter(d => d.file_name.includes(params.keyword!));
     }
-
-    if (params?.status) {
-      filtered = filtered.filter((d) => d.status === params.status);
-    }
-
     const page = params?.page || 1;
-    const pageSize = params?.pageSize || 100;
-    const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-
-    return {
-      data: filtered.slice(start, end),
-      total: filtered.length,
-      page,
-      pageSize,
-    };
+    const page_size = params?.page_size || 10;
+    const start = (page - 1) * page_size;
+    return { items: filtered.slice(start, start + page_size), total: filtered.length, page, page_size };
   },
 
-  // 上传文档
-  async uploadDocument(knowledgeBaseId: string, file: File): Promise<Document> {
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    const newDoc: Document = {
-      id: `doc-${Date.now()}`,
-      knowledgeBaseId,
-      name: file.name,
-      type: file.name.split('.').pop() || 'unknown',
-      size: file.size / (1024 * 1024),
-      status: 'processing',
-      segmentCount: 0,
-      uploadedAt: new Date().toISOString(),
-      uploadedBy: 'current-user',
-    };
+  async uploadDocument(kbId: number, file: File): Promise<DocumentRead> {
+    await delay(1500);
+    const newDoc: DocumentRead = { id: mockDocuments.length + 1, knowledge_base_id: kbId, file_name: file.name, file_type: file.name.split('.').pop() || 'unknown', file_size: `${(file.size / 1024 / 1024).toFixed(1)}MB`, status: 'processing', segment_count: 0, word_count: 0, uploaded_by: 'admin', uploaded_at: new Date().toISOString() };
+    mockDocuments.push(newDoc);
     return newDoc;
   },
 
-  // 更新文档
-  async updateDocument(id: string, data: Partial<Document>): Promise<Document> {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    const doc = mockDocuments.find((d) => d.id === id);
-    if (!doc) {
-      throw new Error('文档不存在');
-    }
-    return {
-      ...doc,
-      ...data,
-      processedAt: new Date().toISOString(),
-    };
+  async deleteDocument(kbId: number, docId: number): Promise<void> {
+    await delay(300);
+    const idx = mockDocuments.findIndex(d => d.id === docId);
+    if (idx !== -1) mockDocuments.splice(idx, 1);
   },
 
-  // 删除文档
-  async deleteDocument(id: string): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-  },
-
-  // 获取文档片段
-  async getSegments(documentId: string, params?: {
-    page?: number;
-    pageSize?: number;
-  }): Promise<PaginatedResponse<Segment>> {
-    let filtered = mockSegments.filter((s) => s.documentId === documentId);
-
+  async getSegments(kbId: number, params?: { page?: number; page_size?: number }): Promise<PageResult<SegmentRead>> {
+    await delay(300);
+    const filtered = mockSegments.filter(s => s.knowledge_base_id === kbId);
     const page = params?.page || 1;
-    const pageSize = params?.pageSize || 10;
-    const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-
-    return {
-      data: filtered.slice(start, end),
-      total: filtered.length,
-      page,
-      pageSize,
-    };
+    const page_size = params?.page_size || 10;
+    const start = (page - 1) * page_size;
+    return { items: filtered.slice(start, start + page_size), total: filtered.length, page, page_size };
   },
 
-  // 测试检索
-  async testRetrieval(knowledgeBaseId: string, query: string): Promise<{
-    results: Array<{ content: string; score: number; metadata?: any }>;
-    latency: number;
-  }> {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    return {
-      results: [
-        {
-          content: '这是检索到的第一条相关内容...',
-          score: 0.92,
-          metadata: { documentId: 'doc-001', page: 5 },
-        },
-        {
-          content: '这是检索到的第二条相关内容...',
-          score: 0.85,
-          metadata: { documentId: 'doc-002', page: 12 },
-        },
-      ],
-      latency: Math.random() * 500 + 200,
-    };
+  async updateSegment(kbId: number, segId: number, data: any): Promise<SegmentRead> {
+    await delay(300);
+    const idx = mockSegments.findIndex(s => s.id === segId);
+    if (idx === -1) throw new Error('分段不存在');
+    mockSegments[idx] = { ...mockSegments[idx], ...data, updated_at: new Date().toISOString() };
+    return mockSegments[idx];
   },
 };

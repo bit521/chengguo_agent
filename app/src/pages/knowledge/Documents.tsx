@@ -21,13 +21,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { knowledgeService } from '@/services/knowledge';
-import type { KnowledgeBase, Document } from '@/services/types/knowledge';
+import type { KnowledgeBaseRead, DocumentRead } from '@/services/knowledge';
 
 export default function KnowledgeDocuments() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [knowledgeBase, setKnowledgeBase] = useState<KnowledgeBase | null>(null);
-  const [documents, setDocuments] = useState<Document[]>([]);
+  const [knowledgeBase, setKnowledgeBase] = useState<KnowledgeBaseRead | null>(null);
+  const [documents, setDocuments] = useState<DocumentRead[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
@@ -42,15 +42,13 @@ export default function KnowledgeDocuments() {
   const loadData = async () => {
     try {
       setLoading(true);
+      const kbId = Number(id);
       const [kbData, docsData] = await Promise.all([
-        knowledgeService.getKnowledgeBase(id!),
-        knowledgeService.getDocuments(id!, {
-          search,
-          status: status !== 'all' ? status : undefined,
-        }),
+        knowledgeService.getKnowledgeBase(kbId),
+        knowledgeService.getDocuments(kbId, { keyword: search || undefined }),
       ]);
       setKnowledgeBase(kbData);
-      setDocuments(docsData.data);
+      setDocuments(docsData.items);
     } catch (error) {
       console.error('加载数据失败:', error);
     } finally {
@@ -61,11 +59,10 @@ export default function KnowledgeDocuments() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-
     try {
       setUploading(true);
       for (const file of Array.from(files)) {
-        await knowledgeService.uploadDocument(id!, file);
+        await knowledgeService.uploadDocument(Number(id), file);
       }
       loadData();
     } catch (error) {
@@ -75,10 +72,10 @@ export default function KnowledgeDocuments() {
     }
   };
 
-  const handleDelete = async (docId: string) => {
+  const handleDelete = async (docId: number) => {
     if (confirm('确定要删除这个文档吗？此操作不可恢复！')) {
       try {
-        await knowledgeService.deleteDocument(docId);
+        await knowledgeService.deleteDocument(Number(id), docId);
         loadData();
       } catch (error) {
         console.error('删除失败:', error);
@@ -148,7 +145,7 @@ export default function KnowledgeDocuments() {
             <CardTitle className="text-sm font-medium">文档总数</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{knowledgeBase.documentCount}</div>
+            <div className="text-2xl font-bold">{knowledgeBase.document_count}</div>
           </CardContent>
         </Card>
         <Card>
@@ -156,23 +153,23 @@ export default function KnowledgeDocuments() {
             <CardTitle className="text-sm font-medium">分段总数</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{knowledgeBase.segmentCount.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{knowledgeBase.segment_count.toLocaleString()}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">向量总数</CardTitle>
+            <CardTitle className="text-sm font-medium">嵌入模型</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{knowledgeBase.vectorCount.toLocaleString()}</div>
+            <div className="text-sm font-medium">{knowledgeBase.embedding_model}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">存储大小</CardTitle>
+            <CardTitle className="text-sm font-medium">状态</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{knowledgeBase.storageSize.toFixed(1)} MB</div>
+            <Badge variant={knowledgeBase.status === 'ready' ? 'default' : 'secondary'}>{knowledgeBase.status}</Badge>
           </CardContent>
         </Card>
       </div>
@@ -226,20 +223,20 @@ export default function KnowledgeDocuments() {
                   <TableRow key={doc.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        {getFileIcon(doc.type)}
-                        <span className="font-medium">{doc.name}</span>
+                        {getFileIcon(doc.file_type)}
+                        <span className="font-medium">{doc.file_name}</span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{doc.type.toUpperCase()}</Badge>
+                      <Badge variant="outline">{doc.file_type.toUpperCase()}</Badge>
                     </TableCell>
-                    <TableCell>{doc.size.toFixed(2)} MB</TableCell>
-                    <TableCell>{doc.segmentCount}</TableCell>
+                    <TableCell>{doc.file_size || '-'}</TableCell>
+                    <TableCell>{doc.segment_count}</TableCell>
                     <TableCell>{getStatusBadge(doc.status)}</TableCell>
                     <TableCell>
-                      {new Date(doc.uploadedAt).toLocaleString('zh-CN')}
+                      {doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleString('zh-CN') : '-'}
                     </TableCell>
-                    <TableCell>{doc.uploadedBy}</TableCell>
+                    <TableCell>{doc.uploaded_by || '-'}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Button variant="ghost" size="sm">

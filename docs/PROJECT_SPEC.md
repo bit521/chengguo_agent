@@ -625,8 +625,9 @@ npm run dev    # 默认Mock模式，访问 http://localhost:5173
 5. ~~**用户管理页对接**：`/system/users` 对接真实后端 CRUD + 分配角色 + 分页~~ ✅ 已完成
 6. ~~**角色管理页对接**：`/system/roles` 对接真实后端 CRUD + 分配权限 + 分页~~ ✅ 已完成
 7. ~~**权限管理页**：`/system/permissions` 完整 CRUD + 分页 + 模块分类~~ ✅ 已完成
-8. **表单校验**：集成 React Hook Form + Zod
-9. **图表集成**：集成 Recharts 展示趋势图
+8. ~~**业务模块页面对接**：Agent/Prompt/Knowledge/Tool 的创建、详情、版本管理页面全部使用新 API 类型~~ ✅ 已完成
+9. **表单校验**：集成 React Hook Form + Zod
+10. **图表集成**：集成 Recharts 展示趋势图
 
 ---
 
@@ -720,6 +721,27 @@ interface PaginatedResponse<T> {
 cd app
 VITE_USE_MOCK=false VITE_API_BASE=http://localhost:8080/api npm run dev
 ```
+
+### 2026-03-20 — 业务模块页面全面对接新API类型
+
+**涉及文件**：
+
+| 文件 | 变更内容 |
+|------|---------|
+| `app/src/pages/agent/Create.tsx` | 重写：支持创建/编辑模式，使用 snake_case 字段（`model_id`, `config.system_prompt` 等），加载已有 Agent 数据回填 |
+| `app/src/pages/agent/Detail.tsx` | 重写：使用 `AgentRead` 类型，展示 `call_count_7d`/`success_rate`，内嵌版本历史列表 |
+| `app/src/pages/agent/Versions.tsx` | 重写：调用真实 `getAgentVersions` + `rollbackAgent` API，支持回滚操作 |
+| `app/src/pages/prompt/Create.tsx` | 重写：支持创建/编辑/发布，使用 `PromptVariableSchema` 类型，变量管理 + 预览 |
+| `app/src/pages/prompt/Versions.tsx` | 重写：调用真实 `getPromptVersions` + `rollbackPrompt` API，点击版本查看内容 |
+| `app/src/pages/knowledge/Create.tsx` | 重写：调用真实 `createKnowledgeBase` API，创建后跳转详情页 |
+| `app/src/pages/tool/Create.tsx` | 重写：调用真实 `createTool` API，自动生成 `function_definition` |
+| `app/src/pages/tool/Detail.tsx` | 重写：使用 `ToolRead` 类型，展示统计数据，支持 JSON 参数测试工具 |
+
+**关键变化**：
+- 所有页面不再引用旧 `@/services/types/` 目录下的类型，改用各模块 API 服务导出的类型
+- 字段名全部改为 snake_case（`model_id`, `call_count_7d`, `success_rate`, `avg_latency` 等）
+- 版本管理页面（Agent/Prompt）均支持真实回滚操作
+- Tool Detail 支持 JSON 格式参数输入并调用 `testTool` API
 
 ### 2026-03-19（二）— 用户/角色/权限分页 + 权限管理完整页面
 

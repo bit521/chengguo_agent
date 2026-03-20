@@ -31,18 +31,18 @@ import {
   Loader2
 } from 'lucide-react';
 import { knowledgeService } from '@/services/knowledge';
-import type { KnowledgeBase, Document } from '@/services/types/knowledge';
+import type { KnowledgeBaseRead, DocumentRead } from '@/services/knowledge';
 
 export default function KnowledgeDetail() {
   const { id } = useParams();
-  const [knowledgeBase, setKnowledgeBase] = useState<KnowledgeBase | null>(null);
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
+  const [knowledgeBase, setKnowledgeBase] = useState<KnowledgeBaseRead | null>(null);
+  const [documents, setDocuments] = useState<DocumentRead[]>([]);
+  const [selectedDoc, setSelectedDoc] = useState<DocumentRead | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isOcrProcessing, setIsOcrProcessing] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [docToDelete, setDocToDelete] = useState<string | null>(null);
+  const [docToDelete, setDocToDelete] = useState<number | null>(null);
   
   // OCR相关状态
   const [originalContent, setOriginalContent] = useState('');
@@ -59,8 +59,8 @@ export default function KnowledgeDetail() {
 
   const loadKnowledgeBase = async () => {
     try {
-      const response = await knowledgeService.getKnowledgeBase(id!);
-      setKnowledgeBase(response.data);
+      const data = await knowledgeService.getKnowledgeBase(Number(id));
+      setKnowledgeBase(data);
     } catch (error) {
       console.error('加载知识库失败:', error);
     }
@@ -68,8 +68,8 @@ export default function KnowledgeDetail() {
 
   const loadDocuments = async () => {
     try {
-      const response = await knowledgeService.getDocuments(id!);
-      setDocuments(response.data);
+      const response = await knowledgeService.getDocuments(Number(id));
+      setDocuments(response.items);
     } catch (error) {
       console.error('加载文档列表失败:', error);
     }
@@ -82,13 +82,11 @@ export default function KnowledgeDetail() {
     setIsUploading(true);
     
     try {
-      // 检查是否是图片文件
       if (file.type.startsWith('image/')) {
         await handleImageUpload(file);
       } else {
         await handleDocumentUpload(file);
       }
-      
       loadDocuments();
     } catch (error) {
       console.error('上传失败:', error);
@@ -128,35 +126,24 @@ export default function KnowledgeDetail() {
 版本号：v2.0.1
 发布日期：2024年2月8日
 
-主要功能：
-1. Agent管理 - 创建和管理智能Agent
-2. 模型管理 - 配置和切换AI模型
-3. Prompt管理 - 优化提示词模板
-4. 知识库管理 - RAG知识库和文档管理
-5. 工具管理 - 扩展Agent能力
-6. 对话日志 - 追踪和分析对话
-7. 数据统计 - 使用情况和成本分析
-8. 系统管理 - 用户权限和系统配置
-
 注意：此内容由OCR自动识别，可能存在识别错误，请人工校对。`;
 
       setOcrContent(mockOcrResult);
       setCorrectedContent(mockOcrResult);
-      setOriginalContent(''); // 图片没有原始文本
+      setOriginalContent('');
       setEditMode(true);
       
-      // 创建文档记录
-      const newDoc: Document = {
-        id: `doc-${Date.now()}`,
-        knowledgeBaseId: id!,
-        fileName: file.name,
-        fileType: 'pdf', // OCR后转为文档
-        fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+      const newDoc: DocumentRead = {
+        id: Date.now(),
+        knowledge_base_id: Number(id),
+        file_name: file.name,
+        file_type: 'pdf',
+        file_size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
         status: 'processing',
-        segmentCount: 0,
-        wordCount: mockOcrResult.length,
-        uploadedBy: 'current-user',
-        uploadedAt: new Date().toISOString(),
+        segment_count: 0,
+        word_count: mockOcrResult.length,
+        uploaded_by: 'current-user',
+        uploaded_at: new Date().toISOString(),
       };
       
       setSelectedDoc(newDoc);
@@ -193,19 +180,19 @@ Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
     setCorrectedContent(mockContent);
     setImagePreview(null);
     
-    const newDoc: Document = {
-      id: `doc-${Date.now()}`,
-      knowledgeBaseId: id!,
-      fileName: file.name,
-      fileType: file.name.endsWith('.pdf') ? 'pdf' : 
+    const newDoc: DocumentRead = {
+      id: Date.now(),
+      knowledge_base_id: Number(id),
+      file_name: file.name,
+      file_type: file.name.endsWith('.pdf') ? 'pdf' : 
                 file.name.endsWith('.docx') ? 'docx' :
                 file.name.endsWith('.md') ? 'md' : 'txt',
-      fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+      file_size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
       status: 'processing',
-      segmentCount: 0,
-      wordCount: mockContent.length,
-      uploadedBy: 'current-user',
-      uploadedAt: new Date().toISOString(),
+      segment_count: 0,
+      word_count: mockContent.length,
+      uploaded_by: 'current-user',
+      uploaded_at: new Date().toISOString(),
     };
     
     setSelectedDoc(newDoc);
@@ -214,14 +201,8 @@ Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
 
   const handleSaveCorrection = async () => {
     if (!selectedDoc) return;
-    
     try {
-      // 保存校对后的内容
-      await knowledgeService.updateDocument(selectedDoc.id, {
-        content: correctedContent,
-        status: 'completed'
-      });
-      
+      await knowledgeService.updateSegment(Number(id), selectedDoc.id, { content: correctedContent });
       alert('内容已保存并开始处理');
       setEditMode(false);
       loadDocuments();
@@ -233,9 +214,8 @@ Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
 
   const handleDeleteDocument = async () => {
     if (!docToDelete) return;
-    
     try {
-      await knowledgeService.deleteDocument(docToDelete);
+      await knowledgeService.deleteDocument(Number(id), docToDelete);
       loadDocuments();
       if (selectedDoc?.id === docToDelete) {
         setSelectedDoc(null);
@@ -336,18 +316,17 @@ Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                         onClick={() => {
                           setSelectedDoc(doc);
                           setEditMode(false);
-                          // 加载文档内容
-                          setOriginalContent(`文档内容加载中...\n\n文件名: ${doc.fileName}`);
+                          setOriginalContent(`文档内容加载中...\n\n文件名: ${doc.file_name}`);
                           setOcrContent('');
                           setCorrectedContent('');
                           setImagePreview(null);
                         }}
                       >
                         <div className="flex items-start gap-2">
-                          {getFileIcon(doc.fileType)}
+                          {getFileIcon(doc.file_type)}
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{doc.fileName}</p>
-                            <p className="text-xs text-muted-foreground">{doc.fileSize}</p>
+                            <p className="text-sm font-medium truncate">{doc.file_name}</p>
+                            <p className="text-xs text-muted-foreground">{doc.file_size}</p>
                             <div className="mt-1">
                               {getStatusBadge(doc.status)}
                             </div>
@@ -400,9 +379,9 @@ Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <div>
-                            <h3 className="font-semibold">{selectedDoc.fileName}</h3>
+                            <h3 className="font-semibold">{selectedDoc.file_name}</h3>
                             <p className="text-sm text-muted-foreground">
-                              上传于 {new Date(selectedDoc.uploadedAt).toLocaleString('zh-CN')}
+                              上传于 {selectedDoc.uploaded_at ? new Date(selectedDoc.uploaded_at).toLocaleString('zh-CN') : '-'}
                             </p>
                           </div>
                           {getStatusBadge(selectedDoc.status)}
@@ -539,7 +518,7 @@ Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                 <CardTitle className="text-sm font-medium">文档数</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{knowledgeBase.documentCount}</div>
+                <div className="text-2xl font-bold">{knowledgeBase.document_count}</div>
               </CardContent>
             </Card>
             <Card>
@@ -547,23 +526,23 @@ Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                 <CardTitle className="text-sm font-medium">分段数</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{knowledgeBase.segmentCount.toLocaleString()}</div>
+                <div className="text-2xl font-bold">{knowledgeBase.segment_count.toLocaleString()}</div>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">向量数</CardTitle>
+                <CardTitle className="text-sm font-medium">嵌入模型</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{knowledgeBase.vectorCount.toLocaleString()}</div>
+                <div className="text-sm font-medium">{knowledgeBase.embedding_model}</div>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">存储大小</CardTitle>
+                <CardTitle className="text-sm font-medium">状态</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{knowledgeBase.storageSize}</div>
+                {getStatusBadge(knowledgeBase.status)}
               </CardContent>
             </Card>
           </div>
@@ -586,15 +565,15 @@ Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Embedding模型:</span>
-                  <span>{knowledgeBase.embeddingModel}</span>
+                  <span>{knowledgeBase.embedding_model}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">关联Agent数:</span>
-                  <span>{knowledgeBase.linkedAgentCount}</span>
+                  <span className="text-muted-foreground">创建人:</span>
+                  <span>{knowledgeBase.created_by}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">创建时间:</span>
-                  <span>{new Date(knowledgeBase.createdAt).toLocaleString('zh-CN')}</span>
+                  <span>{new Date(knowledgeBase.created_at).toLocaleString('zh-CN')}</span>
                 </div>
               </div>
             </CardContent>
@@ -609,7 +588,7 @@ Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Embedding模型</label>
-                <Input value={knowledgeBase.embeddingModel} readOnly />
+                <Input value={knowledgeBase.embedding_model} readOnly />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">分段策略</label>
