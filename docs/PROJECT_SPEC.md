@@ -773,3 +773,29 @@ import Pagination from '@/components/Pagination'
 - 编辑：可修改名称和描述（编码不可改）
 - 删除：二次确认，提示影响范围
 - 统计卡片：总权限数 + 当前页前3个模块的权限数
+
+### 2026-03-20（二）— 知识库管理完整功能（MinIO + 配置 + 分段预览）
+
+**涉及文件**：
+
+| 文件 | 变更内容 |
+|------|---------|
+| `app/src/services/api/knowledge.ts` | 扩展类型：`KnowledgeBaseRead` 新增分段策略/检索策略字段；`DocumentRead` 新增 `minio_path`；新增 `KnowledgeBaseConfig`、`RetrievalTestResult` 类型；新增 `updateKnowledgeBaseConfig`、`retryDocument`、`getDocumentSegments`、`testRetrieval` 接口 |
+| `app/src/services/mock/knowledge.ts` | 对应补充所有新接口的 Mock 实现 |
+| `app/src/services/knowledge.ts` | 重新导出新类型和方法 |
+| `app/src/pages/knowledge/Create.tsx` | 重写：左右两栏，左=基本信息+Embedding，右=分段策略+检索策略 |
+| `app/src/pages/knowledge/Detail.tsx` | 重写：文档管理Tab（表格+分页+Sheet分段预览）、概览Tab、配置Tab（可编辑） |
+| `app/src/pages/knowledge/Documents.tsx` | 重写：文档列表分页，"查看分段"打开 Sheet 抽屉，支持重试失败文档 |
+| `app/src/pages/knowledge/Segments.tsx` | 重写：新增文档下拉过滤，支持 `document_id` 参数 |
+| `app/src/pages/knowledge/Test.tsx` | 重写：左右两栏，调用真实 `testRetrieval` API |
+| `app/docs/知识库后端开发流程.md` | 新增：后端完整开发流程文档（MinIO、异步分段处理、pgvector） |
+
+**新增 API 接口**：
+
+| 接口 | 说明 |
+|------|------|
+| `PUT /knowledge-bases/{id}/config` | 更新分段策略/检索策略配置 |
+| `POST /knowledge-bases/{kb_id}/documents/{doc_id}/retry` | 重试失败文档 |
+| `GET /knowledge-bases/{kb_id}/documents/{doc_id}/segments` | 按文档查询分段 |
+| `GET /knowledge-bases/{kb_id}/segments?document_id=` | 按文档过滤分段 |
+| `POST /knowledge-bases/{kb_id}/retrieval-test` | 检索测试 |

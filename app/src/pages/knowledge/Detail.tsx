@@ -1,622 +1,415 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useParams, useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { 
-  Upload, 
-  FileText, 
-  Image as ImageIcon, 
-  Trash2, 
-  Eye,
-  Edit,
-  Save,
-  X,
-  CheckCircle,
-  AlertCircle,
-  Loader2
-} from 'lucide-react';
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from '@/components/ui/table';
+import { Upload, FileText, Trash2, Eye, RefreshCw, CheckCircle, AlertCircle, Loader2, Save, TestTube } from 'lucide-react';
 import { knowledgeService } from '@/services/knowledge';
-import type { KnowledgeBaseRead, DocumentRead } from '@/services/knowledge';
+import type { KnowledgeBaseRead, DocumentRead, SegmentRead, KnowledgeBaseConfig } from '@/services/knowledge';
+import Pagination from '@/components/Pagination';
+
+const PAGE_SIZE = 5;
 
 export default function KnowledgeDetail() {
-  const { id } = useParams();
-  const [knowledgeBase, setKnowledgeBase] = useState<KnowledgeBaseRead | null>(null);
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const kbId = Number(id);
+
+  const [kb, setKb] = useState<KnowledgeBaseRead | null>(null);
   const [documents, setDocuments] = useState<DocumentRead[]>([]);
-  const [selectedDoc, setSelectedDoc] = useState<DocumentRead | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isOcrProcessing, setIsOcrProcessing] = useState(false);
-  const [editMode, setEditMode] = useState(false);
+  const [docTotal, setDocTotal] = useState(0);
+  const [docPage, setDocPage] = useState(1);
+  const [uploading, setUploading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [docToDelete, setDocToDelete] = useState<number | null>(null);
-  
-  // OCR相关状态
-  const [originalContent, setOriginalContent] = useState('');
-  const [ocrContent, setOcrContent] = useState('');
-  const [correctedContent, setCorrectedContent] = useState('');
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
+  // 分段抽屉
+  const [segDrawerOpen, setSegDrawerOpen] = useState(false);
+  const [segDoc, setSegDoc] = useState<DocumentRead | null>(null);
+  const [segments, setSegments] = useState<SegmentRead[]>([]);
+  const [segTotal, setSegTotal] = useState(0);
+  const [segPage, setSegPage] = useState(1);
+  const [segLoading, setSegLoading] = useState(false);
+
+  // 配置编辑
+  const [configForm, setConfigForm] = useState<KnowledgeBaseConfig>({});
+  const [configSaving, setConfigSaving] = useState(false);
+
+  useEffect(() => { loadKb(); }, [kbId]);
+  useEffect(() => { loadDocuments(); }, [kbId, docPage]);
   useEffect(() => {
-    if (id) {
-      loadKnowledgeBase();
-      loadDocuments();
-    }
-  }, [id]);
+    if (segDrawerOpen && segDoc) loadSegments();
+  }, [segDrawerOpen, segDoc, segPage]);
 
-  const loadKnowledgeBase = async () => {
+  const loadKb = async () => {
     try {
-      const data = await knowledgeService.getKnowledgeBase(Number(id));
-      setKnowledgeBase(data);
-    } catch (error) {
-      console.error('加载知识库失败:', error);
-    }
+      const data = await knowledgeService.getKnowledgeBase(kbId);
+      setKb(data);
+      setConfigForm({
+        embedding_model: data.embedding_model,
+        chunk_method: data.chunk_method,
+        chunk_size: data.chunk_size,
+        chunk_overlap: data.chunk_overlap,
+        retrieval_strategy: data.retrieval_strategy,
+        top_k: data.top_k,
+        similarity_threshold: data.similarity_threshold,
+      });
+    } catch (e) { console.error(e); }
   };
 
   const loadDocuments = async () => {
     try {
-      const response = await knowledgeService.getDocuments(Number(id));
-      setDocuments(response.items);
-    } catch (error) {
-      console.error('加载文档列表失败:', error);
-    }
+      const res = await knowledgeService.getDocuments(kbId, { page: docPage, page_size: PAGE_SIZE });
+      setDocuments(res.items);
+      setDocTotal(res.total);
+    } catch (e) { console.error(e); }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    
+  const loadSegments = async () => {
+    if (!segDoc) return;
     try {
-      if (file.type.startsWith('image/')) {
-        await handleImageUpload(file);
-      } else {
-        await handleDocumentUpload(file);
+      setSegLoading(true);
+      const res = await knowledgeService.getDocumentSegments(kbId, segDoc.id, { page: segPage, page_size: PAGE_SIZE });
+      setSegments(res.items);
+      setSegTotal(res.total);
+    } catch (e) { console.error(e); }
+    finally { setSegLoading(false); }
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files?.length) return;
+    try {
+      setUploading(true);
+      for (const file of Array.from(files)) {
+        await knowledgeService.uploadDocument(kbId, file);
       }
       loadDocuments();
-    } catch (error) {
-      console.error('上传失败:', error);
-      alert('上传失败，请重试');
-    } finally {
-      setIsUploading(false);
-    }
+      loadKb();
+    } catch (err) { console.error(err); }
+    finally { setUploading(false); e.target.value = ''; }
   };
 
-  const handleImageUpload = async (file: File) => {
-    // 创建图片预览
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImagePreview(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-
-    setIsOcrProcessing(true);
-    
-    try {
-      // 模拟OCR识别
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('knowledgeBaseId', id!);
-      
-      // 调用OCR服务（这里是模拟）
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // 模拟OCR识别结果
-      const mockOcrResult = `这是通过OCR识别的文本内容。
-
-图片文件名: ${file.name}
-识别时间: ${new Date().toLocaleString('zh-CN')}
-
-识别的文本内容：
-产品名称：辰光Agent平台
-版本号：v2.0.1
-发布日期：2024年2月8日
-
-注意：此内容由OCR自动识别，可能存在识别错误，请人工校对。`;
-
-      setOcrContent(mockOcrResult);
-      setCorrectedContent(mockOcrResult);
-      setOriginalContent('');
-      setEditMode(true);
-      
-      const newDoc: DocumentRead = {
-        id: Date.now(),
-        knowledge_base_id: Number(id),
-        file_name: file.name,
-        file_type: 'pdf',
-        file_size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
-        status: 'processing',
-        segment_count: 0,
-        word_count: mockOcrResult.length,
-        uploaded_by: 'current-user',
-        uploaded_at: new Date().toISOString(),
-      };
-      
-      setSelectedDoc(newDoc);
-      
-    } catch (error) {
-      console.error('OCR识别失败:', error);
-      alert('OCR识别失败，请重试');
-    } finally {
-      setIsOcrProcessing(false);
-    }
-  };
-
-  const handleDocumentUpload = async (file: File) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('knowledgeBaseId', id!);
-    
-    // 模拟上传和处理
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // 模拟文档内容
-    const mockContent = `文档名称: ${file.name}
-上传时间: ${new Date().toLocaleString('zh-CN')}
-
-这是文档的内容预览...
-
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-
-文档已成功上传并开始处理。系统将自动进行分段和向量化处理。`;
-
-    setOriginalContent(mockContent);
-    setOcrContent('');
-    setCorrectedContent(mockContent);
-    setImagePreview(null);
-    
-    const newDoc: DocumentRead = {
-      id: Date.now(),
-      knowledge_base_id: Number(id),
-      file_name: file.name,
-      file_type: file.name.endsWith('.pdf') ? 'pdf' : 
-                file.name.endsWith('.docx') ? 'docx' :
-                file.name.endsWith('.md') ? 'md' : 'txt',
-      file_size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
-      status: 'processing',
-      segment_count: 0,
-      word_count: mockContent.length,
-      uploaded_by: 'current-user',
-      uploaded_at: new Date().toISOString(),
-    };
-    
-    setSelectedDoc(newDoc);
-    setEditMode(false);
-  };
-
-  const handleSaveCorrection = async () => {
-    if (!selectedDoc) return;
-    try {
-      await knowledgeService.updateSegment(Number(id), selectedDoc.id, { content: correctedContent });
-      alert('内容已保存并开始处理');
-      setEditMode(false);
-      loadDocuments();
-    } catch (error) {
-      console.error('保存失败:', error);
-      alert('保存失败，请重试');
-    }
-  };
-
-  const handleDeleteDocument = async () => {
+  const handleDelete = async () => {
     if (!docToDelete) return;
     try {
-      await knowledgeService.deleteDocument(Number(id), docToDelete);
+      await knowledgeService.deleteDocument(kbId, docToDelete);
       loadDocuments();
-      if (selectedDoc?.id === docToDelete) {
-        setSelectedDoc(null);
-      }
-    } catch (error) {
-      console.error('删除失败:', error);
-    } finally {
-      setDeleteDialogOpen(false);
-      setDocToDelete(null);
-    }
+      loadKb();
+    } catch (e) { console.error(e); }
+    finally { setDeleteDialogOpen(false); setDocToDelete(null); }
   };
 
-  const getFileIcon = (fileType: string) => {
-    if (fileType === 'pdf' || fileType === 'docx' || fileType === 'txt' || fileType === 'md') {
-      return <FileText className="h-4 w-4" />;
-    }
-    return <ImageIcon className="h-4 w-4" />;
+  const handleRetry = async (docId: number) => {
+    try {
+      await knowledgeService.retryDocument(kbId, docId);
+      loadDocuments();
+    } catch (e) { console.error(e); }
   };
 
-  const getStatusBadge = (status: string) => {
-    const config = {
-      completed: { label: '已完成', variant: 'default' as const, icon: CheckCircle },
-      processing: { label: '处理中', variant: 'secondary' as const, icon: Loader2 },
-      failed: { label: '失败', variant: 'destructive' as const, icon: AlertCircle },
-      pending: { label: '等待中', variant: 'outline' as const, icon: Loader2 },
+  const openSegDrawer = (doc: DocumentRead) => {
+    setSegDoc(doc);
+    setSegPage(1);
+    setSegDrawerOpen(true);
+  };
+
+  const handleSaveConfig = async () => {
+    try {
+      setConfigSaving(true);
+      const updated = await knowledgeService.updateKnowledgeBaseConfig(kbId, configForm);
+      setKb(updated);
+      alert('配置已保存');
+    } catch (e) { console.error(e); }
+    finally { setConfigSaving(false); }
+  };
+
+  const setConfig = (key: keyof KnowledgeBaseConfig, value: string | number) =>
+    setConfigForm(prev => ({ ...prev, [key]: value }));
+
+  const statusBadge = (status: string) => {
+    const map: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+      completed: { label: '已完成', variant: 'default' },
+      processing: { label: '处理中', variant: 'secondary' },
+      failed: { label: '失败', variant: 'destructive' },
+      pending: { label: '等待中', variant: 'outline' },
+      ready: { label: '就绪', variant: 'default' },
+      indexing: { label: '索引中', variant: 'secondary' },
+      empty: { label: '空', variant: 'outline' },
+      error: { label: '错误', variant: 'destructive' },
     };
-    const { label, variant, icon: Icon } = config[status as keyof typeof config] || config.pending;
-    return (
-      <Badge variant={variant} className="gap-1">
-        <Icon className="h-3 w-3" />
-        {label}
-      </Badge>
-    );
+    const cfg = map[status] || { label: status, variant: 'outline' as const };
+    return <Badge variant={cfg.variant}>{cfg.label}</Badge>;
   };
 
-  if (!knowledgeBase) {
-    return <div className="flex items-center justify-center h-full">加载中...</div>;
-  }
+  if (!kb) return <div className="flex items-center justify-center h-full"><Loader2 className="h-6 w-6 animate-spin" /></div>;
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b bg-white shrink-0">
         <div>
-          <h1 className="text-2xl font-bold">{knowledgeBase.name}</h1>
-          <p className="text-muted-foreground">{knowledgeBase.description}</p>
+          <h1 className="text-xl font-bold">{kb.name}</h1>
+          <p className="text-xs text-muted-foreground">{kb.description}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">编辑配置</Button>
-          <label htmlFor="file-upload">
-            <Button disabled={isUploading}>
-              {isUploading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  上传中...
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4 mr-2" />
-                  上传文档/图片
-                </>
-              )}
-            </Button>
-          </label>
-          <input
-            id="file-upload"
-            type="file"
-            className="hidden"
-            accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg"
-            onChange={handleFileUpload}
-            disabled={isUploading}
-          />
+          <Button variant="outline" size="sm" onClick={() => navigate(`/knowledge/${kbId}/test`)}>
+            <TestTube className="h-4 w-4 mr-1" />检索测试
+          </Button>
+          <input id="doc-upload" type="file" multiple accept=".pdf,.docx,.md,.txt,.html,.csv" onChange={handleUpload} className="hidden" />
+          <Button size="sm" disabled={uploading} onClick={() => document.getElementById('doc-upload')?.click()}>
+            {uploading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Upload className="h-4 w-4 mr-1" />}
+            {uploading ? '上传中...' : '上传文档'}
+          </Button>
         </div>
       </div>
 
-      <Tabs defaultValue="documents">
-        <TabsList>
-          <TabsTrigger value="documents">文档管理</TabsTrigger>
-          <TabsTrigger value="overview">概览</TabsTrigger>
-          <TabsTrigger value="config">配置</TabsTrigger>
-        </TabsList>
+      {/* Tabs */}
+      <div className="flex-1 overflow-hidden flex flex-col">
+        <Tabs defaultValue="documents" className="flex flex-col h-full">
+          <TabsList className="mx-6 mt-4 w-fit shrink-0">
+            <TabsTrigger value="documents">文档管理</TabsTrigger>
+            <TabsTrigger value="overview">概览</TabsTrigger>
+            <TabsTrigger value="config">配置</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="documents" className="space-y-4">
-          <div className="grid grid-cols-12 gap-4 h-[calc(100vh-280px)]">
-            {/* 左侧文档列表 */}
-            <Card className="col-span-3">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm">文档列表 ({documents.length})</CardTitle>
-              </CardHeader>
+          {/* 文档管理 */}
+          <TabsContent value="documents" className="flex-1 overflow-y-auto px-6 pb-6 mt-4">
+            <Card>
               <CardContent className="p-0">
-                <ScrollArea className="h-[calc(100vh-360px)]">
-                  <div className="space-y-1 p-4 pt-0">
-                    {documents.map((doc) => (
-                      <div
-                        key={doc.id}
-                        className={`p-3 rounded-lg border cursor-pointer transition-colors hover:bg-accent ${
-                          selectedDoc?.id === doc.id ? 'bg-accent border-primary' : ''
-                        }`}
-                        onClick={() => {
-                          setSelectedDoc(doc);
-                          setEditMode(false);
-                          setOriginalContent(`文档内容加载中...\n\n文件名: ${doc.file_name}`);
-                          setOcrContent('');
-                          setCorrectedContent('');
-                          setImagePreview(null);
-                        }}
-                      >
-                        <div className="flex items-start gap-2">
-                          {getFileIcon(doc.file_type)}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{doc.file_name}</p>
-                            <p className="text-xs text-muted-foreground">{doc.file_size}</p>
-                            <div className="mt-1">
-                              {getStatusBadge(doc.status)}
-                            </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>文件名</TableHead>
+                      <TableHead>类型</TableHead>
+                      <TableHead>大小</TableHead>
+                      <TableHead>分段数</TableHead>
+                      <TableHead>状态</TableHead>
+                      <TableHead>上传时间</TableHead>
+                      <TableHead>操作</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {documents.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                          <FileText className="h-10 w-10 mx-auto mb-2 opacity-20" />
+                          暂无文档，点击右上角上传
+                        </TableCell>
+                      </TableRow>
+                    ) : documents.map(doc => (
+                      <TableRow key={doc.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{doc.file_name}</span>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-1 mt-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDocToDelete(doc.id);
-                              setDeleteDialogOpen(true);
-                            }}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
+                          {doc.error_message && <p className="text-xs text-destructive mt-0.5">{doc.error_message}</p>}
+                        </TableCell>
+                        <TableCell><Badge variant="outline">{doc.file_type.toUpperCase()}</Badge></TableCell>
+                        <TableCell>{doc.file_size || '-'}</TableCell>
+                        <TableCell>{doc.segment_count}</TableCell>
+                        <TableCell>{statusBadge(doc.status)}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleString('zh-CN') : '-'}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="sm" title="查看分段" onClick={() => openSegDrawer(doc)} disabled={doc.status !== 'completed'}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {doc.status === 'failed' && (
+                              <Button variant="ghost" size="sm" title="重试" onClick={() => handleRetry(doc.id)}>
+                                <RefreshCw className="h-4 w-4" />
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="sm" title="删除" onClick={() => { setDocToDelete(doc.id); setDeleteDialogOpen(true); }}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                    
-                    {documents.length === 0 && (
-                      <div className="text-center py-8 text-muted-foreground text-sm">
-                        <FileText className="h-12 w-12 mx-auto mb-2 opacity-20" />
-                        <p>暂无文档</p>
-                        <p className="text-xs mt-1">点击右上角上传文档</p>
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
+            <div className="mt-4">
+              <Pagination page={docPage} total={docTotal} pageSize={PAGE_SIZE} onChange={setDocPage} />
+            </div>
+          </TabsContent>
 
-            {/* 右侧内容区域 */}
-            <div className="col-span-9 space-y-4">
-              {!selectedDoc ? (
-                <Card className="h-full flex items-center justify-center">
-                  <CardContent className="text-center text-muted-foreground">
-                    <FileText className="h-16 w-16 mx-auto mb-4 opacity-20" />
-                    <p>请从左侧选择一个文档查看内容</p>
-                    <p className="text-sm mt-2">或上传新的文档/图片</p>
+          {/* 概览 */}
+          <TabsContent value="overview" className="flex-1 overflow-y-auto px-6 pb-6 mt-4 space-y-4">
+            <div className="grid grid-cols-4 gap-4">
+              <Card><CardHeader className="pb-2"><CardTitle className="text-sm">文档数</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{kb.document_count}</div></CardContent></Card>
+              <Card><CardHeader className="pb-2"><CardTitle className="text-sm">分段数</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{kb.segment_count.toLocaleString()}</div></CardContent></Card>
+              <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Embedding 模型</CardTitle></CardHeader><CardContent><div className="text-sm font-medium">{kb.embedding_model}</div></CardContent></Card>
+              <Card><CardHeader className="pb-2"><CardTitle className="text-sm">状态</CardTitle></CardHeader><CardContent>{statusBadge(kb.status)}</CardContent></Card>
+            </div>
+            <Card>
+              <CardHeader><CardTitle>详细信息</CardTitle></CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                {[
+                  ['分段方式', kb.chunk_method === 'fixed' ? '固定长度' : kb.chunk_method === 'sentence' ? '按句子' : '按段落'],
+                  ['分段大小', `${kb.chunk_size} tokens`],
+                  ['重叠大小', `${kb.chunk_overlap} tokens`],
+                  ['检索策略', kb.retrieval_strategy === 'vector' ? '向量检索' : kb.retrieval_strategy === 'fulltext' ? '全文检索' : '混合检索'],
+                  ['Top K', String(kb.top_k)],
+                  ['相似度阈值', String(kb.similarity_threshold)],
+                  ['创建人', kb.created_by || '-'],
+                  ['创建时间', new Date(kb.created_at).toLocaleString('zh-CN')],
+                  ['更新时间', new Date(kb.updated_at).toLocaleString('zh-CN')],
+                ].map(([label, value]) => (
+                  <div key={label} className="flex justify-between py-1 border-b last:border-0">
+                    <span className="text-muted-foreground">{label}</span>
+                    <span>{value}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* 配置 */}
+          <TabsContent value="config" className="flex-1 overflow-hidden mt-4">
+            <div className="grid grid-cols-2 h-full gap-0">
+              <div className="overflow-y-auto px-6 pb-6 space-y-4 border-r">
+                <Card>
+                  <CardHeader className="pb-3"><CardTitle className="text-base">Embedding 模型</CardTitle></CardHeader>
+                  <CardContent>
+                    <div className="space-y-1.5">
+                      <Label>模型</Label>
+                      <Select value={configForm.embedding_model} onValueChange={v => setConfig('embedding_model', v)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="text-embedding-3-small">text-embedding-3-small</SelectItem>
+                          <SelectItem value="text-embedding-3-large">text-embedding-3-large</SelectItem>
+                          <SelectItem value="text-embedding-ada-002">text-embedding-ada-002</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </CardContent>
                 </Card>
-              ) : (
-                <>
-                  {/* 文档信息栏 */}
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div>
-                            <h3 className="font-semibold">{selectedDoc.file_name}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              上传于 {selectedDoc.uploaded_at ? new Date(selectedDoc.uploaded_at).toLocaleString('zh-CN') : '-'}
-                            </p>
-                          </div>
-                          {getStatusBadge(selectedDoc.status)}
-                        </div>
-                        <div className="flex gap-2">
-                          {!editMode && ocrContent && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setEditMode(true)}
-                            >
-                              <Edit className="h-4 w-4 mr-2" />
-                              编辑校对
-                            </Button>
-                          )}
-                          {editMode && (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setEditMode(false);
-                                  setCorrectedContent(ocrContent);
-                                }}
-                              >
-                                <X className="h-4 w-4 mr-2" />
-                                取消
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={handleSaveCorrection}
-                              >
-                                <Save className="h-4 w-4 mr-2" />
-                                保存
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* 内容展示区域 */}
-                  {imagePreview ? (
-                    // 图片OCR模式：左侧图片，右侧OCR结果
-                    <div className="grid grid-cols-2 gap-4">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-sm flex items-center gap-2">
-                            <ImageIcon className="h-4 w-4" />
-                            原始图片
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <ScrollArea className="h-[calc(100vh-480px)]">
-                            <img 
-                              src={imagePreview} 
-                              alt="上传的图片" 
-                              className="w-full rounded-lg border"
-                            />
-                          </ScrollArea>
-                        </CardContent>
-                      </Card>
-
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-sm flex items-center gap-2">
-                            {isOcrProcessing ? (
-                              <>
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                OCR识别中...
-                              </>
-                            ) : (
-                              <>
-                                <Eye className="h-4 w-4" />
-                                {editMode ? 'OCR识别结果（可编辑）' : 'OCR识别结果'}
-                              </>
-                            )}
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          {isOcrProcessing ? (
-                            <div className="flex items-center justify-center h-[calc(100vh-480px)]">
-                              <div className="text-center">
-                                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
-                                <p className="text-sm text-muted-foreground">正在识别图片内容...</p>
-                              </div>
-                            </div>
-                          ) : editMode ? (
-                            <Textarea
-                              value={correctedContent}
-                              onChange={(e) => setCorrectedContent(e.target.value)}
-                              className="h-[calc(100vh-480px)] font-mono text-sm resize-none"
-                              placeholder="OCR识别的内容将显示在这里，您可以进行编辑校对..."
-                            />
-                          ) : (
-                            <ScrollArea className="h-[calc(100vh-480px)]">
-                              <pre className="text-sm whitespace-pre-wrap font-mono">
-                                {ocrContent || '等待OCR识别...'}
-                              </pre>
-                            </ScrollArea>
-                          )}
-                        </CardContent>
-                      </Card>
+                <Card>
+                  <CardHeader className="pb-3"><CardTitle className="text-base">分段策略</CardTitle></CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label>分段方式</Label>
+                      <Select value={configForm.chunk_method} onValueChange={v => setConfig('chunk_method', v)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fixed">固定长度</SelectItem>
+                          <SelectItem value="sentence">按句子</SelectItem>
+                          <SelectItem value="paragraph">按段落</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  ) : (
-                    // 普通文档模式：单栏显示
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-sm flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          文档内容
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <ScrollArea className="h-[calc(100vh-480px)]">
-                          <pre className="text-sm whitespace-pre-wrap font-mono">
-                            {originalContent || '加载中...'}
-                          </pre>
-                        </ScrollArea>
-                      </CardContent>
-                    </Card>
-                  )}
-                </>
-              )}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label>分段大小（tokens）</Label>
+                        <Input type="number" min={100} max={2000} value={configForm.chunk_size} onChange={e => setConfig('chunk_size', Number(e.target.value))} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>重叠大小（tokens）</Label>
+                        <Input type="number" min={0} max={500} value={configForm.chunk_overlap} onChange={e => setConfig('chunk_overlap', Number(e.target.value))} />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              <div className="overflow-y-auto px-6 pb-6 space-y-4">
+                <Card>
+                  <CardHeader className="pb-3"><CardTitle className="text-base">检索策略</CardTitle></CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label>检索方式</Label>
+                      <Select value={configForm.retrieval_strategy} onValueChange={v => setConfig('retrieval_strategy', v)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="vector">向量检索</SelectItem>
+                          <SelectItem value="fulltext">全文检索</SelectItem>
+                          <SelectItem value="hybrid">混合检索</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label>Top K</Label>
+                        <Input type="number" min={1} max={20} value={configForm.top_k} onChange={e => setConfig('top_k', Number(e.target.value))} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>相似度阈值</Label>
+                        <Input type="number" min={0} max={1} step={0.05} value={configForm.similarity_threshold} onChange={e => setConfig('similarity_threshold', Number(e.target.value))} />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Button onClick={handleSaveConfig} disabled={configSaving}>
+                  {configSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                  保存配置
+                </Button>
+              </div>
             </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* 分段预览抽屉 */}
+      <Sheet open={segDrawerOpen} onOpenChange={setSegDrawerOpen}>
+        <SheetContent className="w-[600px] sm:max-w-[600px] flex flex-col">
+          <SheetHeader>
+            <SheetTitle>分段预览 — {segDoc?.file_name}</SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto mt-4 space-y-3">
+            {segLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : segments.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">暂无分段数据</p>
+            ) : segments.map(seg => (
+              <Card key={seg.id}>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Badge variant="outline">#{seg.position}</Badge>
+                    <span>字数: {seg.word_count}</span>
+                    <span>Token: {seg.token_count}</span>
+                    <span>命中: {seg.hit_count}次</span>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm leading-relaxed">{seg.content}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        </TabsContent>
-
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">文档数</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{knowledgeBase.document_count}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">分段数</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{knowledgeBase.segment_count.toLocaleString()}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">嵌入模型</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-sm font-medium">{knowledgeBase.embedding_model}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">状态</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {getStatusBadge(knowledgeBase.status)}
-              </CardContent>
-            </Card>
+          <div className="pt-4 border-t">
+            <Pagination page={segPage} total={segTotal} pageSize={PAGE_SIZE} onChange={p => { setSegPage(p); }} />
           </div>
+        </SheetContent>
+      </Sheet>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>索引状态</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>索引进度</span>
-                  <span>100%</span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-2">
-                  <div className="bg-primary h-2 rounded-full" style={{ width: "100%" }} />
-                </div>
-                {getStatusBadge(knowledgeBase.status)}
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Embedding模型:</span>
-                  <span>{knowledgeBase.embedding_model}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">创建人:</span>
-                  <span>{knowledgeBase.created_by}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">创建时间:</span>
-                  <span>{new Date(knowledgeBase.created_at).toLocaleString('zh-CN')}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="config">
-          <Card>
-            <CardHeader>
-              <CardTitle>知识库配置</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Embedding模型</label>
-                <Input value={knowledgeBase.embedding_model} readOnly />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">分段策略</label>
-                <Input value="自动分段 (500 tokens, 50 overlap)" readOnly />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">检索策略</label>
-                <Input value="混合检索 (Top 5, 阈值 0.7)" readOnly />
-              </div>
-              <Button>保存配置</Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
+      {/* 删除确认 */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>确认删除</AlertDialogTitle>
-            <AlertDialogDescription>
-              确定要删除这个文档吗？此操作不可恢复，文档的所有分段和向量数据都将被删除。
-            </AlertDialogDescription>
+            <AlertDialogDescription>确定要删除这个文档吗？此操作不可恢复，文档的所有分段和向量数据都将被删除。</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteDocument} className="bg-red-600 text-white hover:bg-red-700">
-              删除
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 text-white hover:bg-red-700">删除</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
