@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, Trash2, Zap, Edit } from 'lucide-react';
+import { Plus, Trash2, Zap, Edit, Eye, EyeOff } from 'lucide-react';
 import { modelService } from '@/services/model';
 import type { ProviderRead } from '@/services/model';
 import Pagination from '@/components/Pagination';
@@ -26,6 +26,7 @@ export default function ModelProviders() {
   const [editingProvider, setEditingProvider] = useState<ProviderRead | null>(null);
   const [testingId, setTestingId] = useState<number | null>(null);
   const [form, setForm] = useState({ name: '', type: 'openai', endpoint: '', api_key: '', description: '' });
+  const [apiKeyVisible, setApiKeyVisible] = useState(false);
 
   useEffect(() => { loadProviders(); }, [page]);
 
@@ -60,7 +61,7 @@ export default function ModelProviders() {
 
   const handleEdit = (provider: ProviderRead) => {
     setEditingProvider(provider);
-    setForm({ name: provider.name, type: provider.type, endpoint: provider.endpoint, api_key: '', description: provider.description || '' });
+    setForm({ name: provider.name, type: provider.type, endpoint: provider.endpoint, api_key: provider.api_key || '', description: provider.description || '' });
     setFormOpen(true);
   };
 
@@ -181,7 +182,22 @@ export default function ModelProviders() {
             </div>
             <div className="space-y-2">
               <Label>API Key</Label>
-              <Input type="password" value={form.api_key} onChange={e => setForm({ ...form, api_key: e.target.value })} placeholder="sk-..." />
+              <div className="relative">
+                <Input 
+                  type={apiKeyVisible ? "text" : "password"} 
+                  value={form.api_key} 
+                  onChange={e => setForm({ ...form, api_key: e.target.value })} 
+                  placeholder="sk-..." 
+                />
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="absolute right-0 top-0 h-full px-3" 
+                  onClick={() => setApiKeyVisible(!apiKeyVisible)}
+                >
+                  {apiKeyVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>描述</Label>

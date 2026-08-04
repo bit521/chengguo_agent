@@ -6,6 +6,7 @@ export interface ProviderRead {
   type: string;
   status: string;
   endpoint: string;
+  api_key: string | null;
   description: string | null;
   model_count: number;
 }

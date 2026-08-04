@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Settings, Trash2 } from 'lucide-react';
+import { Search, Plus, Settings, Trash2, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -147,6 +147,9 @@ export default function ModelList() {
                   <TableCell>{getStatusBadge(model.status)}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => navigate(`/models/${model.id}/test`)}>
+                        <MessageSquare className="h-4 w-4" />
+                      </Button>
                       <Button variant="ghost" size="sm" onClick={() => navigate(`/models/${model.id}/edit`)}>
                         <Settings className="h-4 w-4" />
                       </Button>
