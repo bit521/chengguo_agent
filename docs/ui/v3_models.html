@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<title>模型管理</title>
+<style>
+/* Layout Design Spec Based System */
+:root {
+  --sidebar-dark: #0F172A;
+  --sidebar-text: #CBD5E1;
+  --sidebar-active: #2563EB;
+  --main-bg: #F1F5F9;
+  --card: #FFFFFF;
+  --border: #E2E8F0;
+  --text: #1E293B;
+  --text-muted: #64748B;
+  --accent: #2563EB;
+  --accent-light: #DBEAFE;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --radius-lg: 8px;
+  --radius-md: 6px;
+  --radius-sm: 4px;
+}
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--main-bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; display: block; }
+button { cursor: pointer; border: none; background: none; font: inherit; }
+ul { list-style: none; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+.grid { display: grid; gap: 16px; }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.flex { display: flex; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-4 { gap: 16px; }
+.gap-2 { gap: 8px; }
+.space-y-6 > * { margin-bottom: 24px; }
+.text-3xl { font-size: 24px; font-weight: 700; }
+.text-xl { font-size: 18px; font-weight: 600; }
+.text-lg { font-size: 16px; font-weight: 600; }
+.text-base { font-size: 14px; }
+.font-bold { font-weight: 700; }
+.font-medium { font-weight: 500; }
+.text-muted-foreground { color: var(--text-muted); }
+.text-accent { color: var(--accent); }
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.text-danger { color: var(--danger); }
+.text-outline { color: var(--border); }
+.bg-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; }
+.bg-primary { background: var(--accent); color: white; }
+.bg-success { background: var(--success); color: #000; }
+.bg-warning { background: var(--warning); color: #000; }
+.bg-danger { background: var(--danger); color: #fff; }
+.text-sm { font-size: 12px; }
+.text-xs { font-size: 10px; }
+.border { border-style: solid; }
+.border-base { border-bottom-style: solid; }
+.border-primary { border-color: var(--accent); }
+.rounded { border-radius: var(--radius-md); }
+.p-4 { padding: 16px; }
+.p-2 { padding: 8px; }
+.m-0 { margin: 0; }
+.mt-2 { margin-top: 8px; }
+.mb-1 { margin-bottom: 4px; }
+.h-4 { height: 16px; }
+.w-4 { width: 16px; }
+.text-center { text-align: center; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 2L3 7v10c0 4.4 3.6 8 9 9s9-3.6 9-9V7l-9-5z"/></svg>
+        <span>辰光 Agent</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="group-title">Agent 管理</div>
+      <a href="#">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M4 4h16v2H4zM4 8h16v2H4zM4 12h10v2H4zM4 16h10v2H4zM4 20h16v2H4z"/></svg>
+        <span>工作台</span>
+      </a>
+
+      <div class="group-title">模型管理</div>
+      <a href="#" class="active">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 2l7 4v6c0 3.3-2.2 6-5 6V2l-7 4z"/></svg>
+        <span>模型管理</span>
+      </a>
+
+      <div class="group-title">Prompt 管理</div>
+      <a href="#">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M3 5c0-.55.45-1 1-1h12.17l2.83 2.83c.18.18.25.43.17.66a.5.5 0 01-.64.3A1.97 1.97 0 0015 7H4V5h1zm0 4v12c0 .55.45 1 1 1h12c.55 0 1-.45 1-1V9H4z"/></svg>
+        <span>Prompt 管理</span>
+      </a>
+
+      <div class="group-title">知识库</div>
+      <a href="#">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M4 6c0-1.1.9-2 2-2h12c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V6zm10 0h4v12H6c-1.1 0-2-.9-2-2V6zm0-6H6V8h12v2z"/></svg>
+        <span>知识库管理</span>
+      </a>
+
+      <div class="group-title">工具管理</div>
+      <a href="#">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.57-.99.57-1.65 0-1.05-.95-1.95-2.08-1.95-.63 0-1.23.28-1.57.75-.35-.02-.7-.03-1.05-.03-3.45 0-6.25 2.8-6.25 6.25 0 1.51.5 2.94 1.37 4.05-.58 1.23-1.32 2.36-2.18 3.35-.28-.18-.6-.3-.95-.3-.81 0-1.45.64-1.45 1.44 0 .27.08.51.21.71l.03.05c.13.25.3.48.53.66v2.35c0 .55.45 1 1 1 1.11 0 2-.89 2-2v-3.02c0-1.76 1.42-3.18 3.17-3.18.31 0 .61.04.9.11-.19-1.01-.28-2.05-.28-3.11 0-4.97 4.03-9 9-9s9 4.03 9 9-4.03 9-9 9c-1.07 0-2.09-.1-3.06-.28v2.67c0 .28.22.5.5.5.16 0 .3-.15.3-.32l.12-.35v-2.65c-.62-.43-1.15-.97-1.52-1.6 1.05-.55 2.19-.87 3.42-.87 3.86 0 7-3.14 7-7v-1.52c0-.34.23-.6.5-.6h2.65c.87 0 1.59-.73 1.59-1.65 0-.41-.14-.79-.36-1.1z"/></svg>
+        <span>工具管理</span>
+      </a>
+
+      <div class="group-title">对话日志</div>
+      <a href="#">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 18H4V6h16v14zm-2-3H6v-2h12v2zm0-4H6V8h12v2zm0-4H6V8h12v2z"/></svg>
+        <span>对话日志</span>
+      </a>
+
+      <div class="group-title">数据统计</div>
+      <a href="#">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M3 3h2v2H3zm0 4h2v6H3zm0 8h2v6H3zm4-10h2v10H7zm4-6h2v16h-2z"/></svg>
+        <span>数据统计</span>
+      </a>
+
+      <div class="group-title">系统管理</div>
+      <a href="#">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0-2a6 6 0 1 1 0 12 6 6 0 0 1 0-12z"/><circle cx="12" cy="12" r="1" fill="currentColor"/><path d="M19.59 7.05L18.17 5.64c.12-.45.12-.79.12-1.16 0-.19-.01-.37-.04-.56l1.47 1.47c.15 1.08-.29 1.95-.91 2.57z"/></svg>
+        <span>系统管理</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-user">
+      <div class="avatar">Z</div>
+      <div class="meta">
+        <div class="name">管理员</div>
+        <div class="email">admin@example.com</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <section class="main">
+    <!-- Header/Breadcrumb -->
+    <header class="header">
+      <nav class="path" aria-label="breadcrumb">
+        <a href="#">首页</a>
+        <a href="#" class="last">模型管理</a>
+      </nav>
+    </header>
+
+    <!-- Content Area -->
+    <main class="content">
+      <div class="page">
+        <h1>模型管理</h1>
+        <p class="subtitle">管理和配置AI模型</p>
+
+        <!-- Top Stats Cards -->
+        <div class="grid gap-4 md:grid-cols-3">
+          <div class="card">
+            <div class="card-header"><span class="text-sm font-medium">总模型数</span></div>
+            <div class="card-content"><span class="text-2xl font-bold">{totalModels}</span></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="text-sm font-medium">可用模型</span></div>
+            <div class="card-content"><span class="text-2xl font-bold">{availableModels}</span></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="text-sm font-medium">供应商数</span></div>
+            <div class="card-content"><span class="text-2xl font-bold">{uniqueProviders}</span></div>
+          </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="card">
+          <card-header>
+            <div class="flex items-center justify-between">
+              <div class="text-sm font-medium">搜索模型</div>
+              <div class="relative flex-1">
+                <input type="text" placeholder="模型名称或ID" class="w-full pl-9 text-sm rounded border border-base">
+                <svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              </div>
+            </div>
+          </card-header>
+          <card-content>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>模型名称</TableHead>
+                  <TableHead>Model ID</TableHead>
+                  <TableHead>供应商</TableHead>
+                  <TableHead>能力</TableHead>
+                  <TableHead>上下文长度</TableHead>
+                  <TableHead>价格(输入/输出)</TableHead>
+                  <TableHead>状态</TableHead>
+                  <TableHead>操作</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow><TableCell colSpan={8} className="text-center">加载中...</TableCell></TableRow>
+                ) : models.length === 0 ? (
+                  <TableRow><TableCell colSpan={8} className="text-center">暂无数据</TableCell></TableRow>
+                ) : models.map(model => (
+                  <TableRow key={model.id}>
+                    <TableCell className="font-medium">
+                      {model.name}
+                      {model.is_default && <Badge variant="outline" className="ml-2 text-xs">默认</Badge>}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{model.model_id}</TableCell>
+                    <TableCell>{model.provider_name}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {model.capabilities.map(cap => (
+                          <Badge key={cap} variant="outline" className="text-xs">{cap}</Badge>
+                        ))}
+                      </div>
+                    </TableCell>
+                    <TableCell>{model.context_length.toLocaleString()}</TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        <div>${model.input_price}/{model.currency}</div>
+                        <div>${model.output_price}/{model.currency}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{getStatusBadge(model.status)}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`/models/${model.id}/test`)}>
+                          <MessageSquare className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`/models/${model.id}/edit`)}>
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => { setDeleteDialogOpen(true); setDeleteModel(model.id); }}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <Pagination page={page} total={total} pageSize={PAGE_SIZE} onChange={setPage} />
+          </CardContent>
+        </div>
+
+        <!-- Delete Confirmation Dialog -->
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>确认删除</AlertDialogTitle>
+              <AlertDialogDescription>确定要删除所选模型吗？此操作无法撤销。</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>取消</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteModel} className="bg-red-600 text-white hover:bg-red-700">删除</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </main>
+  </section>
+</div>
+
+<script>
+/* Mock data based on spec */
+const models = [
+  {id:1, name:'GPT-4o', model_id:'gpt-4o', provider_name:'OpenAI', capabilities:['Function Call','Vision','Long Context'], context_length:128000, input_price:5, output_price:15, status:'available', is_default:true},
+  {id:2, name:'GPT-4', model_id:'gpt-4', provider_name:'OpenAI', capabilities:['Function Call','Vision'], context_length:8192, input_price:30, output_price:45, status:'available', is_default:false},
+  {id:3, name:'Claude-3.5-Sonnet', model_id:'claude-3.5-sonnet', provider_name:'Anthropic', capabilities:['Function Call','Vision','Long Context'], context_length:200000, input_price:3, output_price:15, status:'available'},
+  {id:4, name:'Claude-3-Haiku', model_id:'claude-3-haiku', provider_name:'Anthropic', capabilities:['Function Call','Long Context'], context_length:100000, input_price:0.25, output_price:1.25, status:'available'},
+  {id:5, name:'Qwen-72B-Chat', model_id:'qwen-72b-chat', provider_name:'阿里云', capabilities:['Function Call','Long Context'], context_length:32768, input_price:20, output_price:20, status:'available'},
+  {id:6, name:'Llama-3-70B', model_id:'llama-3-70b', provider_name:'Meta', capabilities:['Function Call','Long Context'], context_length:8192, input_price:0, output_price:0, status:'available'},
+  {id:7, name:'Gemini-1.5-Pro', model_id:'gemini-1.5-pro', provider_name:'Google', capabilities:['Function Call','Vision','Long Context'], context_length:1048576, input_price:2, output_price:8, status:'rate_limited'},
+  {id:8, name:'Mistral-7B-Instruct', model_id:'mistral-7b-instruct', provider_name:'Mistral', capabilities:['Function Call'], context_length:32768, input_price:1, output_price:2, status:'unavailable'}
+];
+
+const PAGE_SIZE = 5;
+let current = 1, filtered = [];
+
+function formatNumber(n){return n.toLocaleString();}
+function statusBadge(s){
+  const map = {
+    available: {label:'可用', variant:'default'},
+    rate_limited: {label:'限流中', variant:'destructive'},
+    unavailable: {label:'不可用', variant:'secondary'}
+  };
+  const cfg = map[s] || map.unavailable;
+  return `<span class="badge ${cfg.variant}">${cfg.label}</span>`;
+}
+function getTypeLabel(t){return t;}
+
+function renderStats(){
+  // no explicit stats for models page in spec, skip
+}
+function doFilter(){
+  const term = document.getElementById('search').value.toLowerCase();
+  filtered = models.filter(m=>m.name.toLowerCase().includes(term)||m.model_id.toLowerCase().includes(term)||m.provider_name.toLowerCase().includes(term));
+  current = 1;
+  renderTable();
+}
+function renderTable(){
+  const tbody = document.querySelector('#model-table tbody');
+  const start = (current-1)*PAGE_SIZE;
+  const end = start+PAGE_SIZE;
+  const page = filtered.slice(start, end);
+  const totalPages = Math.ceil(filtered.length/PAGE_SIZE) || 1;
+  document.getElementById('total-count').textContent = filtered.length;
+  document.getElementById('page-info').textContent = `${current} / ${totalPages}`;
+  document.getElementById('prev').disabled = current<=1;
+  document.getElementById('next').disabled = current>=totalPages;
+  tbody.innerHTML = page.map(m=>`
+    <tr>
+      <td>${m.name}</td>
+      <td>${m.model_id}</td>
+      <td>${m.provider_name}</td>
+      <td>
+        <div class="flex flex-wrap gap-1">
+          ${m.capabilities.map(c=>`<Badge key=${c} variant="outline" class="text-xs">${c}</Badge>`).join('')}
+        </div>
+      </td>
+      <td>${m.context_length.toLocaleString()}</td>
+      <td>${m.input_price}/${m.currency}</td>
+      <td>${m.output_price}/${m.currency}</td>
+      <td>${statusBadge(m.status)}</td>
+      <td class="actions">
+        <Button variant="ghost" size="sm" onClick={() => navigate(`/models/${m.id}/test`)}>
+          <MessageSquare className="h-4 w-4" />
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => navigate(`/models/${m.id}/edit`)}>
+          <Settings className="h-4 w-4" />
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => { setDeleteDialogOpen(true); setDeleteModel(m.id); }}>
+          <Trash2 className="h-4 w-4 text-destructive" />
+        </Button>
+      </td>
+    </tr>`).join('');
+}
+document.getElementById('search').addEventListener('input',doFilter);
+renderTable();
+</script>
+</body>
+</html>

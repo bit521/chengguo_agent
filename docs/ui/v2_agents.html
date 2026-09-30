@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<title>Agent管理</title>
+<style>
+/* Layout Design Spec Based System */
+:root {
+  --sidebar-dark: #0F172A;
+  --sidebar-text: #CBD5E1;
+  --sidebar-active: #2563EB;
+  --main-bg: #F1F5F9;
+  --card: #FFFFFF;
+  --border: #E2E8F0;
+  --text: #1E293B;
+  --text-muted: #64748B;
+  --accent: #2563EB;
+  --accent-light: #DBEAFE;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --radius-lg: 8px;
+  --radius-md: 6px;
+  --radius-sm: 4px;
+}
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--main-bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; display: block; }
+button { cursor: pointer; border: none; background: none; font: inherit; }
+ul { list-style: none; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+.grid { display: grid; gap: 16px; }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.flex { display: flex; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-4 { gap: 16px; }
+.gap-2 { gap: 8px; }
+.space-y-6 > * { margin-bottom: 24px; }
+.text-3xl { font-size: 24px; font-weight: 700; }
+.text-xl { font-size: 18px; font-weight: 600; }
+.text-lg { font-size: 16px; font-weight: 600; }
+.text-base { font-size: 14px; }
+.font-bold { font-weight: 700; }
+.font-medium { font-weight: 500; }
+.text-muted-foreground { color: var(--text-muted); }
+.text-accent { color: var(--accent); }
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.text-danger { color: var(--danger); }
+.text-outline { color: var(--border); }
+.bg-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; }
+.bg-primary { background: var(--accent); color: white; }
+.bg-success { background: var(--success); color: #000; }
+.bg-warning { background: var(--warning); color: #000; }
+.bg-danger { background: var(--danger); color: #fff; }
+.text-sm { font-size: 12px; }
+.text-xs { font-size: 10px; }
+.border { border-style: solid; }
+.border-base { border-bottom-style: solid; }
+.border-primary { border-color: var(--accent); }
+.rounded { border-radius: var(--radius-md); }
+.p-4 { padding: 16px; }
+.p-2 { padding: 8px; }
+.m-0 { margin: 0; }
+.mt-2 { margin-top: 8px; }
+.mb-1 { margin-bottom: 4px; }
+.h-4 { height: 16px; }
+.w-4 { width: 16px; }
+.text-center { text-align: center; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 2L3 7v10c0 4.4 3.6 8 9 9s9-3.6 9-9V7l-9-5z"/></svg>
+        <span>辰光 Agent</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="group-title">Agent 管理</div>
+      <a href="#" class="active">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M4 4h16v2H4zM4 8h16v2H4zM4 12h10v2H4zM4 16h10v2H4zM4 20h16v2H4z"/></svg>
+        <span>工作台</span>
+      </a>
+
+      <div class="group-title">Agent 管理</div>
+      <a href="#">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 2C9.24 2 7 4.24 7 7c0 2.24 1.41 4.14 3.28 4.78.27.09.42.34.42.62 0 .35-.27.64-.62.72C8.06 13.93 6 12.18 6 10c0-3.24 2.79-6 6-6s6 2.76 6 6c0 .38-.17.73-.45 1.01C15.94 11.45 15 12.36 15 13c0 3.31-2.69 6-6 6V8h2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8h-2V6h2c-1.1 0-2 1.89-2 2z"/></svg>
+        <span>Agent 管理</span>
+      </a>
+
+      <div class="group-title">模型管理</div>
+      <a href="#">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M4 4h16v2H4zM4 8h16v2H4zM4 12h10v2H4zM4 16h10v2H4z"/></svg>
+        <span>模型管理</span>
+      </a>
+
+      <div class="group-title">Prompt 管理</div>
+      <a href="#">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M3 5c0-.55.45-1 1-1h12.17l2.83 2.83c.18.18.25.43.17.66a.5.5 0 01-.64.3A1.97 1.97 0 0015 7H4V5h1zm0 4v12c0 .55.45 1 1 1h12c.55 0 1-.45 1-1V9H4z"/></svg>
+        <span>Prompt 管理</span>
+      </a>
+
+      <div class="group-title">知识库</div>
+      <a href="#">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M4 6c0-1.1.9-2 2-2h12c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V6zm10 0h4v12h-4V6zM4 8h4v12H6c-1.1 0-2-.9-2-2V8zm2 0v12h12V8z"/></svg>
+        <span>知识库管理</span>
+      </a>
+
+      <div class="group-title">工具管理</div>
+      <a href="#">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.57-.99.57-1.65 0-1.05-.95-1.95-2.08-1.95-.63 0-1.23.28-1.57.75-.35-.02-.7-.03-1.05-.03-3.45 0-6.25 2.8-6.25 6.25 0 1.51.5 2.94 1.37 4.05-.58 1.23-1.32 2.36-2.18 3.35-.28-.18-.6-.3-.95-.3-.81 0-1.45.64-1.45 1.44 0 .27.08.51.21.71l.03.05c.13.25.3.48.53.66v2.35c0 .55.45 1 1 1 1.11 0 2-.89 2-2v-3.02c0-1.76 1.42-3.18 3.17-3.18.31 0 .61.04.9.11-.19-1.01-.28-2.05-.28-3.11 0-4.97 4.03-9 9-9s9 4.03 9 9-4.03 9-9 9c-1.07 0-2.09-.1-3.06-.28v2.67c0 .28.22.5.5.5.16 0 .3-.15.3-.32l.12-.35v-2.65c-.62-.43-1.15-.97-1.52-1.6 1.05-.55 2.19-.87 3.42-.87 3.86 0 7-3.14 7-7v-1.52c0-.34.23-.6.5-.6h2.65c.87 0 1.59-.73 1.59-1.65 0-.41-.14-.79-.36-1.1z"/></svg>
+        <span>工具管理</span>
+      </a>
+
+      <div class="group-title">对话日志</div>
+      <a href="#">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 18H4V6h16v14zM0 0h24v24H0z" fill="none"/></svg>
+        <span>对话日志</span>
+      </a>
+
+      <div class="group-title">数据统计</div>
+      <a href="#">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M3 3h2v2H3zm0 4h2v6H3zm0 8h2v6H3zm4-10h2v10H7zm4-6h2v16h-2z"/></svg>
+        <span>数据统计</span>
+      </a>
+
+      <div class="group-title">系统管理</div>
+      <a href="#">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0-2a6 6 0 1 1 0 12 6 6 0 0 1 0-12z"/><circle cx="12" cy="12" r="1" fill="currentColor"/><path d="M19.59 7.05L18.17 5.64c.12-.45.12-.79.12-1.16 0-.19-.01-.37-.04-.56l1.47 1.47c.15 1.08-.29 1.95-.91 2.57z"/></svg>
+        <span>系统管理</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-user">
+      <div class="avatar">Z</div>
+      <div class="meta">
+        <div class="name">管理员</div>
+        <div class="email">admin@example.com</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <section class="main">
+    <!-- Header/Breadcrumb -->
+    <header class="header">
+      <nav class="path" aria-label="breadcrumb">
+        <a href="#">首页</a>
+        <a href="#" class="last">Agent管理</a>
+      </nav>
+    </header>
+
+    <!-- Content Area -->
+    <main class="content">
+      <div class="page">
+        <h1>Agent管理</h1>
+        <p class="subtitle">欢迎回来，查看平台运行状态</p>
+
+        <!-- Stats Cards -->
+        <div class="stats">
+          <div class="stat">
+            <div class="label">今日调用量</div>
+            <div class="value" id="stat-calls">--</div>
+            <div class="trend" id="callsTrend"></div>
+          </div>
+          <div class="stat">
+            <div class="label">Token消耗</div>
+            <div class="value" id="stat-tokens">--</div>
+            <div class="trend" id="tokensTrend"></div>
+          </div>
+          <div class="stat">
+            <div class="label">费用估算</div>
+            <div class="value" id="stat-cost">--</div>
+            <div class="trend" id="costTrend"></div>
+          </div>
+          <div class="stat">
+            <div class="label">活跃Agent</div>
+            <div class="value" id="stat-agents">--</div>
+            <div class="trend" id="agentsTrend"></div>
+          </div>
+        </div>
+
+        <!-- Agent Table -->
+        <div class="table-card">
+          <h2>Agent列表</h2>
+          <div class="toolbar">
+            <div class="left">
+              <input type="text" id="search" placeholder="搜索Agent名称、类型...">
+            </div>
+            <button class="primary">创建Agent</button>
+          </div>
+          <table id="agent-table">
+            <thead>
+              <tr>
+                <th>名称</th>
+                <th>类型</th>
+                <th>状态</th>
+                <th>成功率</th>
+                <th>调用量(7天)</th>
+                <th>版本</th>
+                <th class="text-right">操作</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <div class="pagination">
+            <div class="left"><span>共 <strong id="total-count">0</strong> 条</span></div>
+            <div class="right">
+              <span id="page-info">1 / 1</span>
+              <button id="prev" disabled>&lt;</button>
+              <button id="next" disabled">&gt;</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </section>
+</div>
+
+<script>
+/* Mock data based on spec */
+const stats = {
+  todayCalls: 12487,
+  tokenUsage: 2345678,
+  cost: 1234,
+  activeAgents: 8,
+  totalAgents: 12,
+  todayCallsTrend: 12.5,
+  tokenUsageTrend: 8.3,
+  costTrend: 5.2
+};
+
+const agents = [
+  {id:1, name:'智能客服Agent', type:'对话型', status:'running', success:98.5, calls:12847, version:'v1.3'},
+  {id:2, name:'代码审查Agent', type:'工具型', status:'running', success:97.1, calls:8234, version:'v1.2'},
+  {id:3, name:'数据分析Agent', type:'分析型', status:'running', success:95.2, calls:5632, version:'v1.1'},
+  {id:4, name:'翻译助手Agent', type:'创作型', status:'error', success:99.1, calls:4521, version:'v1.0'},
+  {id:5, name:'内容生成Agent', type:'创作型', status:'running', success:92.8, calls:3876, version:'v0.9'},
+  {id:6, name:'模式迁移Agent', type:'工具型', status:'stopped', success:90.2, calls:3120, version:'v0.8'},
+  {id:7, name:'语音合成Agent', type:'创作型', status:'running', success:93.5, calls:2785, version:'v0.7'},
+  {id:8, name:'推荐系统Agent', type:'分析型', status:'running', success:96.0, calls:4012, version:'v1.0'},
+  {id:9, name:'安全审计Agent', type:'工具型', status:'running', success:94.3, calls:1980, version:'v1.1'},
+  {id:10, name:'情感分析Agent', type:'分析型', status:'running', success:91.7, calls:2543, version:'v0.6'},
+  {id:11, name:'文档生成Agent', type:'创作型', status:'running', success:89.4, calls:1765, version:'v0.5'},
+  {id:12, name:'质量保证Agent', type:'工具型', status:'running', success:95.8, calls:3321, version:'v1.2'}
+];
+
+const PAGE_SIZE = 5;
+let current = 1, filtered = [];
+
+function formatNumber(n){return n.toLocaleString();}
+function statusBadge(s){
+  const map = {
+    running: ['运行中','success-bg'],
+    stopped: ['已停止','default-bg'],
+    error: ['异常','danger-bg']
+  };
+  const [label, cls] = map[s] || map['running'];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+function getTypeLabel(t){return t;}
+
+function renderStats(){
+  document.getElementById('stat-calls').textContent = formatNumber(stats.todayCalls);
+  document.getElementById('callsTrend').textContent = `较昨日 +${stats.todayCallsTrend}%`;
+  document.getElementById('stat-tokens').textContent = formatNumber(stats.tokenUsage);
+  document.getElementById('tokensTrend').textContent = `较昨日 +${stats.tokenUsageTrend}%`;
+  document.getElementById('stat-cost').textContent = `¥${formatNumber(stats.cost)}`;
+  document.getElementById('costTrend').textContent = `较昨日 +${stats.costTrend}%`;
+  document.getElementById('stat-agents').textContent = `${stats.activeAgents}/${stats.totalAgents}`;
+  document.getElementById('agentsTrend').textContent = '较昨日 0';
+}
+function doFilter(){
+  const term = document.getElementById('search').value.toLowerCase();
+  filtered = agents.filter(a=>a.name.toLowerCase().includes(term)||a.type.toLowerCase().includes(term));
+  current = 1;
+  renderTable();
+}
+function renderTable(){
+  const tbody = document.querySelector('#agent-table tbody');
+  const start = (current-1)*PAGE_SIZE;
+  const end = start+PAGE_SIZE;
+  const page = filtered.slice(start, end);
+  document.getElementById('total-count').textContent = filtered.length;
+  const totalPages = Math.ceil(filtered.length/PAGE_SIZE) || 1;
+  document.getElementById('page-info').textContent = `${current} / ${totalPages}`;
+  document.getElementById('prev').disabled = current<=1;
+  document.getElementById('next').disabled = current>=totalPages;
+  tbody.innerHTML = page.map(a=>`
+    <tr>
+      <td>${a.name}</td>
+      <td>${getTypeLabel(a.type)}</td>
+      <td>${statusBadge(a.status)}</td>
+      <td>${a.success.toFixed(1)}%</td>
+      <td>${formatNumber(a.calls)}</td>
+      <td>${a.version}</td>
+      <td class="actions">
+        <button title="${a.status==='running'?'停止':'启动'}">${a.status==='running'?'⏸':'▶'}</button>
+        <button title="编辑">✏</button>
+        <button title="查看">🔍</button>
+      </td>
+    </tr>`).join('');
+}
+document.getElementById('search').addEventListener('input',doFilter);
+renderStats();
+doFilter();
+</script>
+</body>
+</html>
