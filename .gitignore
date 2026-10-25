@@ -138,3 +138,12 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# Project-specific exclusions
+chenguang.db
+chenguang.db.bak_*
+*.bak_*.db
+debug.log
+nul
+app/node_modules/
+logs/
