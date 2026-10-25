@@ -147,3 +147,4 @@ debug.log
 nul
 app/node_modules/
 logs/
+.workbuddy/
