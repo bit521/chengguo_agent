@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块页面 · 辰光 Agent</title>
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body data-page="module" data-title="模块页面" data-group="">
+<script>
+(function () {
+  var p = new URLSearchParams(location.search);
+  if (p.get("page")) { document.body.dataset.page = p.get("page"); }
+  if (p.get("label")) { document.body.dataset.title = p.get("label"); }
+})();
+</script>
+<div id="proto-bar"></div>
+
+<div class="app">
+  <aside id="sidebar"></aside>
+  <div class="main">
+    <header id="topbar"></header>
+    <main class="content">
+      <div class="page">
+        <header class="page-head">
+          <div>
+            <h1 id="stub-title">模块页面</h1>
+            <p class="sub">菜单权限已经生效；页面内容不在本次 RBAC 原型范围内。</p>
+          </div>
+          <div class="page-head__actions">
+            <a class="btn btn--ghost" href="index.html">原型说明</a>
+            <a class="btn btn--primary" href="dashboard.html">返回工作台</a>
+          </div>
+        </header>
+        <div class="page-rule"></div>
+
+        <section class="panel">
+          <div class="empty">
+            <div class="empty__mark">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 13h6M9 17h4"/></svg>
+            </div>
+            <h3 id="stub-heading">这个页面不在本次原型范围</h3>
+            <p>
+              本次原型聚焦 RBAC 授权链路：登录、工作台、Agent 按钮控制、用户 / 角色 / 权限管理、403 页面。
+              模型、Prompt、知识库、工具、对话日志与数据统计沿用 <code class="code">docs/ui/v1–v9</code> 原型，
+              本次只验证它们的菜单可见性与接口权限码。
+            </p>
+            <div class="empty__meta">
+              <span>当前身份 <b id="stub-identity">—</b></span>
+              <span>所需权限 <code class="code" id="stub-perm">—</code></span>
+              <span>来源 <code class="code">PROJECT_SPEC_V2 §7.3</code></span>
+            </div>
+            <div class="empty__actions">
+              <a class="btn btn--primary" href="dashboard.html">返回工作台</a>
+              <a class="btn btn--ghost" href="index.html">查看页面清单</a>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel__head">
+            <h2>权限备注</h2>
+            <span class="count">RBAC</span>
+          </div>
+          <div class="panel__body">
+            <p style="font-size:12.5px;color:var(--text-600);max-width:72ch">
+              菜单隐藏只影响入口，不构成安全边界。直接访问该模块的接口时，后端仍会校验对应的权限码；
+              未声明权限的受保护接口默认拒绝。当前页面不会请求任何业务数据。
+            </p>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div id="toasts" class="toasts"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var p = new URLSearchParams(location.search);
+  var label = p.get("label") || "模块页面";
+  var perm = p.get("perm") || "";
+  var superOnly = p.get("super") === "1";
+  var me = CG.identity();
+
+  document.getElementById("stub-title").textContent = label;
+  document.getElementById("stub-heading").textContent = label + "不在本次原型范围";
+  document.getElementById("stub-identity").textContent = me.name + " · " + me.roleLabel;
+  document.getElementById("stub-perm").textContent = perm || "仅需登录";
+
+  if (superOnly && !me.superuser) {
+    location.replace("forbidden.html?from=" + encodeURIComponent(location.pathname.split("/").pop() + location.search) +
+      "&need=superuser&title=" + encodeURIComponent(label));
+  } else if (perm && !CG.has(perm)) {
+    location.replace("forbidden.html?from=" + encodeURIComponent(location.pathname.split("/").pop() + location.search) +
+      "&need=" + encodeURIComponent(perm) +
+      "&title=" + encodeURIComponent(label));
+  }
+})();
+</script>
+</body>
+</html>

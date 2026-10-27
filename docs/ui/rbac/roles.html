@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>角色管理 · 辰光 Agent</title>
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body data-page="roles" data-title="角色管理" data-group="系统管理" data-perm="role:list">
+<div id="proto-bar"></div>
+
+<div class="app">
+  <aside id="sidebar"></aside>
+  <div class="main">
+    <header id="topbar"></header>
+    <main class="content">
+      <div class="page">
+        <header class="page-head">
+          <div>
+            <h1>角色管理</h1>
+            <p class="sub">角色用权限码描述可执行的操作。用户的有效权限是其所有角色权限的并集，角色之间没有继承。</p>
+          </div>
+          <div class="page-head__actions">
+            <button class="btn btn--primary" data-perm="role:create" data-open-dialog="new-role-dialog">新建角色</button>
+          </div>
+        </header>
+        <div class="page-rule"></div>
+
+        <div class="ledger">
+          <div class="ledger__cell"><span>角色</span><b>4</b><i>2 个内置</i></div>
+          <div class="ledger__cell"><span>已分配用户</span><b>21</b><i>另有 3 人无角色</i></div>
+          <div class="ledger__cell"><span>权限码</span><b>40</b><i>8 个模块</i></div>
+          <div class="ledger__cell"><span>变更生效</span><b>即时</b><i>下一次请求生效</i></div>
+        </div>
+
+        <div class="split">
+          <aside class="panel">
+            <div class="panel__head">
+              <h2>角色列表</h2>
+              <span class="count" id="role-count">4</span>
+            </div>
+            <div class="panel__body panel__body--flush">
+              <div class="role-list" id="role-list"></div>
+            </div>
+            <div class="panel__note">
+              <code class="code">admin</code> 为系统保护角色：不可删除，角色码不可修改。
+            </div>
+          </aside>
+
+          <section class="panel" id="role-detail"></section>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- 编辑角色 -->
+<div class="dialog-backdrop" id="edit-role-dialog" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="edit-role-title">
+    <header class="dialog__head">
+      <div>
+        <h2 id="edit-role-title">编辑角色</h2>
+        <p>角色名称与描述可修改；角色码用于授权判定。</p>
+      </div>
+      <button class="dialog__close" data-close-dialog aria-label="关闭">✕</button>
+    </header>
+    <div class="dialog__body">
+      <div class="field">
+        <label for="edit-role-name">角色名称</label>
+        <input class="input" id="edit-role-name">
+      </div>
+      <div class="field">
+        <label for="edit-role-code">角色码</label>
+        <input class="input" id="edit-role-code">
+        <div class="field__hint" id="edit-role-code-hint">小写字母开头，可含小写字母、数字与下划线。</div>
+      </div>
+      <div class="field">
+        <label for="edit-role-desc">描述</label>
+        <input class="input" id="edit-role-desc">
+      </div>
+      <div class="field__error" id="edit-role-error" hidden>角色码格式不正确，或已存在同名角色码。</div>
+    </div>
+    <footer class="dialog__foot">
+      <button class="btn btn--ghost" data-close-dialog>取消</button>
+      <button class="btn btn--primary" id="edit-role-save">保存</button>
+    </footer>
+  </div>
+</div>
+
+<!-- 新建角色 -->
+<div class="dialog-backdrop" id="new-role-dialog" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="new-role-title">
+    <header class="dialog__head">
+      <div>
+        <h2 id="new-role-title">新建角色</h2>
+        <p>创建后默认没有任何权限，请在权限矩阵中逐项勾选。</p>
+      </div>
+      <button class="dialog__close" data-close-dialog aria-label="关闭">✕</button>
+    </header>
+    <div class="dialog__body">
+      <div class="form-grid">
+        <div class="field">
+          <label for="new-role-name">角色名称</label>
+          <input class="input" id="new-role-name" placeholder="如：只读财务">
+        </div>
+        <div class="field">
+          <label for="new-role-code">角色码</label>
+          <input class="input" id="new-role-code" placeholder="如：finance_viewer" autocomplete="off">
+        </div>
+      </div>
+      <div class="field">
+        <label for="new-role-desc">描述</label>
+        <input class="input" id="new-role-desc" placeholder="这个角色可以做什么，不能做什么">
+      </div>
+      <div class="field__error" id="new-role-error" hidden>请填写名称与角色码；角色码需以小写字母开头且不可重复。</div>
+      <div class="dialog__note">
+        不新增内置角色。需要只读角色时，在此创建并只勾选 <code class="code">list</code> 类权限。
+      </div>
+    </div>
+    <footer class="dialog__foot">
+      <button class="btn btn--ghost" data-close-dialog>取消</button>
+      <button class="btn btn--primary" id="new-role-save" data-perm="role:create">创建角色</button>
+    </footer>
+  </div>
+</div>
+
+<!-- 删除角色 -->
+<div class="dialog-backdrop" id="delete-role-dialog" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="delete-role-title">
+    <header class="dialog__head">
+      <div>
+        <h2 id="delete-role-title">删除角色</h2>
+        <p>删除后，持有该角色的用户将失去这些权限。</p>
+      </div>
+      <button class="dialog__close" data-close-dialog aria-label="关闭">✕</button>
+    </header>
+    <div class="dialog__body">
+      <div class="dialog__warn">
+        即将删除「<b id="delete-role-name">—</b>」。关联的用户角色关系会一并移除，权限在下一次请求生效。
+      </div>
+      <p style="font-size:12.5px;color:var(--text-500)">所需权限 <code class="code">role:delete</code>。原型不会写入数据。</p>
+    </div>
+    <footer class="dialog__foot">
+      <button class="btn btn--ghost" data-close-dialog>取消</button>
+      <button class="btn btn--danger" id="delete-role-save">确认删除</button>
+    </footer>
+  </div>
+</div>
+
+<div id="toasts" class="toasts"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var selected = new URLSearchParams(location.search).get("role") || "operator";
+  if (!ROLES.some(function (r) { return r.code === selected; })) { selected = ROLES[0].code; }
+
+  var listEl = document.getElementById("role-list");
+  var detailEl = document.getElementById("role-detail");
+
+  function permCount(role) {
+    return role.perms.indexOf("*") !== -1 ? 40 : role.perms.length;
+  }
+
+  function currentRole() {
+    return ROLES.filter(function (r) { return r.code === selected; })[0] || ROLES[0];
+  }
+
+  function renderList() {
+    document.getElementById("role-count").textContent = ROLES.length;
+    listEl.innerHTML = ROLES.map(function (role) {
+      return '<button class="role-card' + (role.code === selected ? " is-active" : "") +
+        '" data-role="' + role.code + '" aria-pressed="' + (role.code === selected) + '">' +
+        '<span class="role-card__top">' +
+        '<span class="role-card__name">' + role.name + "</span>" +
+        (role.builtin ? '<span class="chip chip--muted">内置</span>' : "") +
+        '<span class="role-card__count">' + permCount(role) + " 项</span></span>" +
+        '<span class="role-card__meta"><code>' + role.code + "</code><span>" +
+        role.users + " 名用户</span></span></button>";
+    }).join("");
+
+    listEl.querySelectorAll("[data-role]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        selected = btn.getAttribute("data-role");
+        renderList();
+        renderDetail();
+      });
+    });
+  }
+
+  function renderMatrix(role) {
+    var wildcard = role.perms.indexOf("*") !== -1;
+    var canEdit = CG.has("role:assign");
+    var locked = wildcard || !canEdit;
+    var html = '<div class="matrix-scroll"><table class="matrix">' +
+      '<thead><tr><th>模块 / 操作<label class="matrix__all"><input type="checkbox" id="matrix-all"' +
+      (locked ? " disabled" : "") + "> 全选</label></th>";
+    ACTION_ORDER.forEach(function (action) {
+      html += "<th>" + ACTION_LABELS[action] + "<span>" + action + "</span></th>";
+    });
+    html += "</tr></thead><tbody>";
+
+    MODULES.forEach(function (mod) {
+      html += "<tr" + (locked ? ' class="is-locked"' : "") + "><th><code>" + mod.key + "</code><span>" +
+        mod.name + "</span></th>";
+      ACTION_ORDER.forEach(function (action) {
+        if (mod.actions.indexOf(action) === -1) {
+          html += '<td class="is-na">—</td>';
+          return;
+        }
+        var code = mod.key + ":" + action;
+        var checked = wildcard || role.perms.indexOf(code) !== -1;
+        html += '<td><input type="checkbox" data-code="' + code + '"' +
+          (checked ? " checked" : "") + (locked ? ' tabindex="-1" aria-disabled="true"' : "") +
+          ' aria-label="' + mod.name + " " + ACTION_LABELS[action] + " " + code + '"></td>';
+      });
+      html += "</tr>";
+    });
+
+    html += "</tbody></table></div>";
+    return html;
+  }
+
+  function updateSum() {
+    var boxes = detailEl.querySelectorAll("[data-code]");
+    var checked = 0;
+    boxes.forEach(function (box) { if (box.checked) { checked += 1; } });
+    var sum = document.getElementById("matrix-count");
+    if (sum) { sum.textContent = checked; }
+  }
+
+  function renderDetail() {
+    var role = currentRole();
+    var wildcard = role.perms.indexOf("*") !== -1;
+    var canEdit = CG.has("role:assign");
+    var locked = wildcard || !canEdit;
+    var count = permCount(role);
+    var protectedRole = role.code === "admin";
+
+    detailEl.innerHTML =
+      '<div class="role-detail__head">' +
+      "<div><h2>" + role.name + (role.builtin ? ' <span class="chip chip--muted">内置</span>' : "") +
+      (locked ? ' <span class="chip chip--muted" title="当前身份不能修改该角色的权限">只读</span>' : "") + "</h2>" +
+      "<p>" + role.desc + "</p></div>" +
+      '<div class="role-detail__actions">' +
+      '<button class="btn btn--ghost btn--sm" id="edit-role-btn" data-perm="role:update">编辑</button>' +
+      '<button class="btn btn--ghost btn--sm" id="delete-role-btn" data-perm="role:delete"' +
+      (protectedRole ? ' disabled title="admin 角色不可删除"' : "") + ">删除</button>" +
+      "</div></div>" +
+      '<div class="role-stats">' +
+      "<div>角色码 <b>" + role.code + "</b></div>" +
+      "<div>用户数 <b>" + role.users + "</b></div>" +
+      "<div>有效权限 <b>" + (wildcard ? "全部" : count) + " / 40</b></div>" +
+      "<div>类型 <b>" + (role.builtin ? "内置" : "自定义") + "</b></div>" +
+      "</div>" +
+      renderMatrix(role) +
+      '<div class="matrix-foot">' +
+      '<span class="matrix-foot__sum">已选 <b id="matrix-count">' + count + "</b> 项权限" +
+      (wildcard ? " · 由 * 通配覆盖" : canEdit ? " · 可授予 40 项" : " · 只读") + "</span>" +
+      (canEdit && !wildcard
+        ? '<span class="matrix-foot__actions">' +
+          '<button class="btn btn--ghost btn--sm" id="reset-matrix" data-perm="role:assign">取消</button>' +
+          '<button class="btn btn--primary btn--sm" id="save-matrix" data-perm="role:assign">保存变更</button></span>'
+        : "") +
+      "</div>" +
+      '<div class="panel__note">' +
+      (!canEdit
+        ? "当前身份只有查看权限（<code class=\"code\">role:list</code>），矩阵为只读。修改角色权限需要 <code class=\"code\">role:assign</code>。"
+        : wildcard
+          ? "<code class=\"code\">*</code> 表示全部权限，仅允许分配给 admin 角色。逐项勾选不会收窄权限，因此矩阵为只读；需要更细的角色请新建自定义角色。"
+          : "勾选的权限码即为该角色的全部授权。权限变更在下一次请求生效，无需重新登录；菜单与按钮在刷新后更新。") +
+      "</div>";
+
+    CG.applyGates();
+
+    // 绑定矩阵交互
+    detailEl.querySelectorAll("[data-code]").forEach(function (box) {
+      box.addEventListener("change", updateSum);
+    });
+    var all = document.getElementById("matrix-all");
+    if (all && !all.disabled) {
+      all.addEventListener("change", function () {
+        detailEl.querySelectorAll("[data-code]").forEach(function (box) {
+          box.checked = all.checked;
+        });
+        updateSum();
+      });
+    }
+    var save = document.getElementById("save-matrix");
+    if (save && !save.disabled) {
+      save.addEventListener("click", function () {
+        role.perms = Array.prototype.slice.call(detailEl.querySelectorAll("[data-code]:checked"))
+          .map(function (box) { return box.getAttribute("data-code"); });
+        renderList();
+        CG.toast("权限变更已保存（原型演示，未写入数据库）", "ok");
+      });
+    }
+    var reset = document.getElementById("reset-matrix");
+    if (reset) {
+      reset.addEventListener("click", function () {
+        renderDetail();
+        CG.toast("已撤销本次勾选");
+      });
+    }
+    var edit = document.getElementById("edit-role-btn");
+    if (edit) {
+      edit.addEventListener("click", function () { openEdit(role); });
+    }
+    var del = document.getElementById("delete-role-btn");
+    if (del && !del.disabled) {
+      del.addEventListener("click", function () { openDelete(role); });
+    }
+  }
+
+  function openEdit(role) {
+    document.getElementById("edit-role-name").value = role.name;
+    document.getElementById("edit-role-code").value = role.code;
+    document.getElementById("edit-role-desc").value = role.desc;
+    var codeInput = document.getElementById("edit-role-code");
+    codeInput.disabled = role.code === "admin";
+    document.getElementById("edit-role-code-hint").textContent =
+      role.code === "admin"
+        ? "admin 为系统保护角色，角色码不可修改。"
+        : "小写字母开头，可含小写字母、数字与下划线。";
+    document.getElementById("edit-role-error").hidden = true;
+    document.getElementById("edit-role-dialog").dataset.role = role.code;
+    CG.openDialog("edit-role-dialog");
+  }
+
+  document.getElementById("edit-role-save").addEventListener("click", function () {
+    var dialog = document.getElementById("edit-role-dialog");
+    var role = ROLES.filter(function (r) { return r.code === dialog.dataset.role; })[0];
+    if (!role) { return; }
+    var name = document.getElementById("edit-role-name").value.trim();
+    var code = document.getElementById("edit-role-code").value.trim();
+    var desc = document.getElementById("edit-role-desc").value.trim();
+    var error = document.getElementById("edit-role-error");
+    var validCode = role.code === "admin" || /^[a-z][a-z0-9_]*$/.test(code);
+    var duplicate = code !== role.code && ROLES.some(function (r) { return r.code === code; });
+
+    if (!name || !validCode || duplicate) {
+      error.hidden = false;
+      return;
+    }
+    var oldCode = role.code;
+    role.name = name;
+    role.desc = desc;
+    if (oldCode !== "admin") { role.code = code; }
+    USERS.forEach(function (user) {
+      user.roles = user.roles.map(function (r) { return r === oldCode ? role.code : r; });
+    });
+    selected = role.code;
+    CG.closeDialog("edit-role-dialog");
+    renderList();
+    renderDetail();
+    CG.toast("角色信息已更新（原型演示）", "ok");
+  });
+
+  document.getElementById("new-role-save").addEventListener("click", function () {
+    var name = document.getElementById("new-role-name").value.trim();
+    var code = document.getElementById("new-role-code").value.trim();
+    var desc = document.getElementById("new-role-desc").value.trim();
+    var error = document.getElementById("new-role-error");
+    var valid = name && /^[a-z][a-z0-9_]*$/.test(code) && !ROLES.some(function (r) { return r.code === code; });
+    if (!valid) {
+      error.hidden = false;
+      return;
+    }
+    error.hidden = true;
+    ROLES.push({
+      code: code,
+      name: name,
+      builtin: false,
+      desc: desc || "尚未填写描述。",
+      users: 0,
+      perms: []
+    });
+    selected = code;
+    CG.closeDialog("new-role-dialog");
+    document.getElementById("new-role-name").value = "";
+    document.getElementById("new-role-code").value = "";
+    document.getElementById("new-role-desc").value = "";
+    renderList();
+    renderDetail();
+    CG.toast("角色已创建，请勾选权限", "ok");
+  });
+
+  function openDelete(role) {
+    document.getElementById("delete-role-name").textContent = role.name + " · " + role.code;
+    document.getElementById("delete-role-dialog").dataset.role = role.code;
+    CG.openDialog("delete-role-dialog");
+  }
+
+  document.getElementById("delete-role-save").addEventListener("click", function () {
+    var dialog = document.getElementById("delete-role-dialog");
+    var code = dialog.dataset.role;
+    var idx = ROLES.findIndex(function (r) { return r.code === code; });
+    if (idx !== -1) {
+      ROLES.splice(idx, 1);
+      USERS.forEach(function (user) {
+        user.roles = user.roles.filter(function (r) { return r !== code; });
+      });
+      selected = ROLES[0].code;
+    }
+    CG.closeDialog("delete-role-dialog");
+    renderList();
+    renderDetail();
+    CG.toast("角色已删除（原型演示，未写入数据库）", "ok");
+  });
+
+  renderList();
+  renderDetail();
+  CG.applyGates();
+})();
+</script>
+</body>
+</html>
