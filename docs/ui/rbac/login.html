@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录 · 辰光 Agent</title>
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body data-page="login" data-title="登录">
+<div class="login">
+  <aside class="login__aside">
+    <div class="login__brand">
+      <span class="mark">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 17.5h18"/><circle cx="12" cy="11.5" r="5"/><path d="M12 2.5v2M4.6 5.2l1.4 1.4M19.4 5.2L18 6.6"/>
+        </svg>
+      </span>
+      <div><b>辰光</b> <i>AGENT 平台</i></div>
+    </div>
+
+    <div class="login__mid">
+      <div class="login__display">辰光</div>
+      <div class="login__display-en">CHENGUANG AGENT PLATFORM</div>
+      <p class="login__line">每一次访问，先判定身份，再判定权限。</p>
+    </div>
+
+    <div class="login__ledger" aria-label="权限判定示例">
+      <div class="login__ledger-row">
+        <code>agent:list</code><span>运营 · 只读审计</span><span class="ok">允许</span>
+      </div>
+      <div class="login__ledger-row">
+        <code>knowledge:upload</code><span>运营 · 知识库维护</span><span class="ok">允许</span>
+      </div>
+      <div class="login__ledger-row">
+        <code>role:assign</code><span>无此权限的身份</span><span class="no">403</span>
+      </div>
+    </div>
+  </aside>
+
+  <main class="login__main">
+    <div class="login__form">
+      <div class="login__mobile-brand">
+        <span class="mark">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 17.5h18"/><circle cx="12" cy="11.5" r="5"/><path d="M12 2.5v2M4.6 5.2l1.4 1.4M19.4 5.2L18 6.6"/>
+          </svg>
+        </span>
+        <b>辰光</b><i>AGENT 平台</i>
+      </div>
+      <div class="login__kicker">内部系统 · 授权账号登录</div>
+      <h1>登录</h1>
+      <p class="sub">登录成功后加载当前身份的角色与权限，再进入工作台。</p>
+
+      <form class="login__fields" id="login-form" novalidate>
+        <div class="field">
+          <label for="username">用户名</label>
+          <input class="input" id="username" name="username" autocomplete="username" placeholder="如：admin">
+        </div>
+        <div class="field">
+          <label for="password">密码</label>
+          <input class="input" id="password" name="password" type="password" autocomplete="current-password" placeholder="请输入密码">
+        </div>
+        <div class="field">
+          <label for="captcha">验证码</label>
+          <div class="captcha-row">
+            <input class="input" id="captcha" name="captcha" autocomplete="off" placeholder="输入图中字符">
+            <div class="captcha" id="captcha-box" aria-hidden="true">—</div>
+            <button class="captcha-refresh" id="captcha-refresh" type="button">换一张</button>
+          </div>
+        </div>
+        <div class="login__error" id="login-error" hidden></div>
+        <button class="btn btn--primary login__submit" type="submit">登录</button>
+      </form>
+
+      <div class="login__demo">
+        <p>原型演示账号 · 密码任意，填入后按图中验证码登录</p>
+        <div class="chips">
+          <button class="chip" type="button" data-account="admin">林恪 · admin（超管）</button>
+          <button class="chip" type="button" data-account="zhang.lan">张岚 · zhang.lan（运营）</button>
+          <button class="chip" type="button" data-account="zhou.ning">周宁 · zhou.ning（只读）</button>
+          <button class="chip" type="button" data-account="chen.mo">陈默 · chen.mo（无角色）</button>
+        </div>
+      </div>
+
+      <div class="login__foot">
+        <span>辰光科技 · 内部系统 · <a href="index.html" style="color:inherit;text-decoration:underline">原型导览</a></span>
+        <span>验证码 + JWT · 30 分钟</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var ACCOUNT_MAP = {
+    "admin": "super",
+    "zhang.lan": "operator",
+    "zhou.ning": "auditor",
+    "chen.mo": "none"
+  };
+  var CAPTCHA_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  var captchaCode = "";
+  var box = document.getElementById("captcha-box");
+  var error = document.getElementById("login-error");
+
+  // 已登录用户再次访问登录页时回到工作台；?stay=1 供原型评审停留在登录页
+  var stay = new URLSearchParams(location.search).get("stay") === "1";
+  if (sessionStorage.getItem("cg_rbac_identity") && !stay) {
+    location.replace("dashboard.html");
+    return;
+  }
+
+  function makeCaptcha() {
+    captchaCode = "";
+    for (var i = 0; i < 4; i += 1) {
+      captchaCode += CAPTCHA_CHARS.charAt(Math.floor(Math.random() * CAPTCHA_CHARS.length));
+    }
+    box.textContent = captchaCode;
+  }
+
+  document.getElementById("captcha-refresh").addEventListener("click", makeCaptcha);
+  box.addEventListener("click", makeCaptcha);
+
+  document.querySelectorAll("[data-account]").forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      document.getElementById("username").value = chip.getAttribute("data-account");
+      document.getElementById("password").value = "123456";
+      document.getElementById("captcha").focus();
+      error.hidden = true;
+    });
+  });
+
+  document.getElementById("login-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var username = document.getElementById("username").value.trim();
+    var password = document.getElementById("password").value.trim();
+    var captcha = document.getElementById("captcha").value.trim().toUpperCase();
+
+    if (!username || !password) {
+      error.textContent = "请输入用户名与密码。";
+      error.hidden = false;
+      return;
+    }
+    if (captcha !== captchaCode) {
+      error.textContent = "验证码不正确，请按图中字符重新输入。";
+      error.hidden = false;
+      return;
+    }
+    if (!ACCOUNT_MAP[username]) {
+      error.textContent = "原型中可用的账号：admin、zhang.lan、zhou.ning、chen.mo。";
+      error.hidden = false;
+      return;
+    }
+
+    sessionStorage.setItem("cg_rbac_identity", ACCOUNT_MAP[username]);
+    error.hidden = true;
+    location.href = "dashboard.html";
+  });
+
+  makeCaptcha();
+})();
+</script>
+</body>
+</html>

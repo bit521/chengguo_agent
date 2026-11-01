@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工作台 · 辰光 Agent</title>
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body data-page="dashboard" data-title="" data-group="">
+<div id="proto-bar"></div>
+
+<div class="app">
+  <aside id="sidebar"></aside>
+  <div class="main">
+    <header id="topbar"></header>
+    <main class="content">
+      <div class="page">
+        <header class="page-head">
+          <div>
+            <h1>工作台</h1>
+            <p class="sub" id="dash-sub"></p>
+          </div>
+          <div class="page-head__actions">
+            <a class="btn btn--ghost" href="module-stub.html?page=conversations&amp;label=%E5%AF%B9%E8%AF%9D%E6%97%A5%E5%BF%97">查看对话日志</a>
+            <button class="btn btn--primary" data-perm="agent:create" data-toast="新建 Agent 的表单不在本次原型范围" data-toast-kind="ok">新建 Agent</button>
+          </div>
+        </header>
+        <div class="page-rule"></div>
+
+        <div class="ledger" id="dash-ledger">
+          <div class="ledger__cell"><span>运行中 Agent</span><b>12</b><i>共 18 个</i></div>
+          <div class="ledger__cell"><span>今日会话</span><b>8,642</b><i>较昨日 +6.2%</i></div>
+          <div class="ledger__cell"><span>知识库文档</span><b>1,284</b><i>本周新增 12</i></div>
+          <div class="ledger__cell"><span>待处理告警</span><b>1</b><i>严重 1 条</i></div>
+        </div>
+
+        <div class="dash-grid">
+          <div id="dash-main">
+            <section class="panel">
+              <div class="panel__head">
+                <h2>最近活动</h2>
+                <span class="count">过去 24 小时</span>
+                <div class="panel__tools">
+                  <a class="act" href="module-stub.html?page=audit&amp;label=%E5%AE%A1%E8%AE%A1%E6%97%A5%E5%BF%97">查看审计日志</a>
+                </div>
+              </div>
+              <div class="panel__body panel__body--flush">
+                <div class="table-wrap">
+                  <table class="table table--compact">
+                    <thead>
+                      <tr>
+                        <th>时间</th>
+                        <th>操作人</th>
+                        <th>操作</th>
+                        <th>对象</th>
+                        <th>权限码</th>
+                      </tr>
+                    </thead>
+                    <tbody id="activity-body"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="panel__foot">
+                <span>仅显示当前身份可见的模块操作</span>
+                <span>时间均为北京时间</span>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel__head">
+                <h2>业务概况</h2>
+                <div class="panel__tools">
+                  <span class="chip chip--muted">数据截至 09:45</span>
+                </div>
+              </div>
+              <div class="panel__body">
+                <div class="table-wrap">
+                  <table class="table table--compact">
+                    <thead>
+                      <tr><th>Agent</th><th>版本</th><th>状态</th><th>今日会话</th><th>负责人</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>智能客服「听澜」</td><td class="num">v2.4</td><td><span class="stamp stamp--run">运行中</span></td><td class="num">1,284</td><td>张岚</td></tr>
+                      <tr><td>工单自动分级</td><td class="num">v3.1</td><td><span class="stamp stamp--run">运行中</span></td><td class="num">3,402</td><td>张岚</td></tr>
+                      <tr><td>内部知识问答</td><td class="num">v2.0</td><td><span class="stamp stamp--run">运行中</span></td><td class="num">892</td><td>李云</td></tr>
+                      <tr><td>合同条款审阅</td><td class="num">v1.8</td><td><span class="stamp stamp--off">已停止</span></td><td class="num">216</td><td>林恪</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div>
+            <section class="panel">
+              <div class="panel__head">
+                <h2>你的访问范围</h2>
+                <span class="count">RBAC</span>
+              </div>
+              <div class="panel__body" id="scope-body"></div>
+            </section>
+
+            <section class="panel" id="dash-todo">
+              <div class="panel__head">
+                <h2>需要处理</h2>
+                <span class="count">3</span>
+              </div>
+              <div class="panel__body">
+                <div class="todo">
+                  <div class="todo__item">
+                    <span class="todo__sev todo__sev--deny"></span>
+                    <div class="todo__body">
+                      <b>2 个文档解析失败</b>
+                      <span>知识库「产品手册」· 可重试 <code>knowledge:upload</code></span>
+                    </div>
+                  </div>
+                  <div class="todo__item">
+                    <span class="todo__sev"></span>
+                    <div class="todo__body">
+                      <b>1 个 Agent 仍是草稿</b>
+                      <span>营销文案生成器 · 发布需 <code>agent:publish</code></span>
+                    </div>
+                  </div>
+                  <div class="todo__item">
+                    <span class="todo__sev todo__sev--ok"></span>
+                    <div class="todo__body">
+                      <b>1 条告警已恢复</b>
+                      <span>工单自动分级 · Token 配额回到 62%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div id="toasts" class="toasts"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var me = CG.identity();
+
+  document.getElementById("dash-sub").textContent =
+    "2026 年 10 月 25 日 · 周日。当前身份为「" + me.roleLabel + " · " + me.name +
+    "」，页面内容按该身份的权限呈现。";
+
+  var activity = document.getElementById("activity-body");
+  activity.innerHTML = ACTIVITIES.map(function (a) {
+    return "<tr>" +
+      '<td class="num muted">' + a.time + "</td>" +
+      "<td>" + a.actor + "</td>" +
+      "<td>" + a.action + "</td>" +
+      '<td class="muted">' + a.target + "</td>" +
+      "<td>" + (a.code === "—" ? '<span class="muted">—</span>' : '<code class="code">' + a.code + "</code>") + "</td>" +
+      "</tr>";
+  }).join("");
+
+  var business = [
+    { key: "agent", label: "Agent 管理" },
+    { key: "model", label: "模型管理" },
+    { key: "prompt", label: "Prompt 管理" },
+    { key: "knowledge", label: "知识库" },
+    { key: "tool", label: "工具管理" }
+  ];
+  var bizVisible = business.filter(function (m) { return CG.has(m.key + ":list"); }).length;
+  var sysVisible = CG.has("user:list") || CG.has("role:list") || CG.has("permission:list");
+  var summary = IDENTITY_SUMMARY[me.key];
+
+  var rows = business.map(function (m) {
+    var ok = CG.has(m.key + ":list");
+    return '<div class="scope-list__row">' +
+      '<span class="mark' + (ok ? "" : " mark--no") + '">' +
+      (ok ? CG.icon("check", 11) : CG.icon("close", 10)) + "</span>" +
+      "<span>" + m.label + "</span>" +
+      "<code>" + m.key + ":list</code></div>";
+  }).join("");
+
+  var sysOk = sysVisible;
+  rows += '<div class="scope-list__row">' +
+    '<span class="mark' + (sysOk ? "" : " mark--no") + '">' +
+    (sysOk ? CG.icon("check", 11) : CG.icon("close", 10)) + "</span>" +
+    "<span>系统管理</span><code>" + (sysOk ? "user:list 等" : "无") + "</code></div>";
+
+  var rolesChips = me.roleCode
+    ? '<span class="chip chip--role">' + me.roleLabel + "</span>"
+    : '<span class="chip chip--muted">未分配角色</span>';
+  if (me.superuser) {
+    rolesChips += '<span class="chip chip--super">is_superuser</span>';
+  }
+
+  document.getElementById("scope-body").innerHTML =
+    '<div class="scope-id">' +
+    '<div class="avatar">' + me.name.slice(0, 1) + "</div>" +
+    '<div><div class="scope-id__name">' + me.name + '</div><div class="scope-id__meta">' + me.account + "@chenguang.ai</div></div>" +
+    '<div class="chips">' + rolesChips + "</div></div>" +
+    '<div class="scope-stats">' +
+    "<div>有效权限<b>" + (me.superuser ? "40 / 40" : me.permissions.length + " / 40") + "</b></div>" +
+    "<div>业务模块<b>" + bizVisible + " / 5</b></div>" +
+    "<div>系统管理<b>" + (sysVisible ? "可见" : "否") + "</b></div>" +
+    "</div>" +
+    '<div class="scope-list">' + rows + "</div>" +
+    '<div class="scope-note">' + summary.note + "</div>" +
+    '<div class="scope-foot">' +
+    '<span class="chip chip--muted">' + summary.scope + "</span>" +
+    '<a href="permissions.html" data-perm="permission:list">查看权限台账</a>' +
+    "</div>";
+
+  if (me.key === "none") {
+    document.getElementById("dash-ledger").hidden = true;
+    document.getElementById("dash-todo").hidden = true;
+    document.getElementById("dash-main").innerHTML =
+      '<section class="panel"><div class="empty">' +
+      '<div class="empty__mark">' + CG.icon("lock", 22) + "</div>" +
+      "<h3>这个账号还没有角色</h3>" +
+      "<p>角色决定菜单和操作的可见范围。管理员分配角色后，刷新页面就能看到新的访问范围，不需要重新登录。</p>" +
+      '<div class="empty__meta"><span>账号 ' + me.account + "</span><span>角色 未分配</span><span>权限 0 项</span></div>" +
+      '<div class="empty__actions">' +
+      '<button class="btn btn--ghost" data-toast="个人资料与账户设置不在本次原型范围">查看账号信息</button>' +
+      '<button class="btn btn--primary" id="exit-btn">退出登录</button>' +
+      "</div>" +
+      '<p style="margin-top:18px;font-size:12px;color:var(--text-500)">仍可访问：工作台、个人资料、账户设置</p>' +
+      "</div></section>";
+
+    var exit = document.getElementById("exit-btn");
+    if (exit) {
+      exit.addEventListener("click", function () {
+        sessionStorage.removeItem("cg_rbac_identity");
+        sessionStorage.removeItem("cg_rbac_annotate");
+        location.href = "login.html";
+      });
+    }
+  }
+
+  CG.applyGates();
+})();
+</script>
+</body>
+</html>

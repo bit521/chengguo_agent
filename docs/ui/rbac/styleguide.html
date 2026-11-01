@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>样式规范 · 辰光 Agent RBAC 原型</title>
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+<div class="sg">
+  <div class="sg__head">
+    <h1>样式规范</h1>
+    <p>辰光 Agent · RBAC 授权原型 · 设计令牌与组件</p>
+    <a href="index.html">返回原型导览</a>
+  </div>
+
+  <section class="sg__section">
+    <h2>颜色</h2>
+    <p>墨绿承担导航与允许，朱砂只用于拒绝与删除，黄铜标记当前身份与页面强调。页面底色用带绿调的浅石色，避免常见的暖米色后台。</p>
+    <div class="swatches">
+      <div class="swatch">
+        <div class="swatch__block" style="background:#17231E;color:#C6D0C9">#17231E</div>
+        <div class="swatch__meta"><b>墨 · ink-800</b><span>侧边栏、页脚、深色强调</span></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch__block" style="background:#14503F;color:#DCE9E3">#14503F</div>
+        <div class="swatch__meta"><b>松 · pine-700</b><span>主按钮、允许、运行中</span></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch__block" style="background:#B08442;color:#1B241F">#B08442</div>
+        <div class="swatch__meta"><b>黄铜 · brass-500</b><span>当前身份、规则线、焦点</span></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch__block" style="background:#A6402F;color:#F3DED8">#A6402F</div>
+        <div class="swatch__meta"><b>朱砂 · cinnabar-600</b><span>拒绝、删除、403</span></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch__block swatch__block--bordered" style="background:#FBFAF6;color:#55605A">#FBFAF6</div>
+        <div class="swatch__meta"><b>纸 · stone-50</b><span>面板、表格、对话框</span></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch__block swatch__block--bordered" style="background:#EDEFE9;color:#55605A">#EDEFE9</div>
+        <div class="swatch__meta"><b>石 · stone-200</b><span>页面底色</span></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch__block" style="background:#1B241F;color:#C6D0C9">#1B241F</div>
+        <div class="swatch__meta"><b>正文 · text-900</b><span>标题、正文</span></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch__block" style="background:#626C65;color:#FBFAF6">#626C65</div>
+        <div class="swatch__meta"><b>次要 · text-500</b><span>说明、表头、元信息 · 5.2:1</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sg__section">
+    <h2>字体</h2>
+    <p>界面使用系统中文字体，避免加载外部字体造成首屏抖动；封面与印章使用衬线体形成文档感，权限码一律等宽。正文行长控制在 80 字符以内。</p>
+    <div class="type-spec">
+      <div class="type-row">
+        <div class="label">Display · 54/1.16<br>Georgia, Songti, SimSun</div>
+        <div class="sample-display">权限台账</div>
+      </div>
+      <div class="type-row">
+        <div class="label">UI · 14/1.55<br>Microsoft YaHei UI</div>
+        <div class="sample-ui">角色决定菜单与操作的可见范围。没有权限的入口不显示，直达时展示 403。</div>
+      </div>
+      <div class="type-row">
+        <div class="label">Mono · 11–12<br>Cascadia Code, Consolas</div>
+        <div class="sample-mono">knowledge:upload · role:assign · agent:publish · user:delete</div>
+      </div>
+    </div>
+    <div class="type-scale">
+      <div><span>26 / 700</span><b style="font-size:26px">页面标题 用户管理</b></div>
+      <div><span>17 / 600</span><b style="font-size:17px">面板标题 角色矩阵</b></div>
+      <div><span>14 / 600</span><b style="font-size:14px">表格主字段 林恪</b></div>
+      <div><span>13 / 400</span><span style="font-size:13px;color:var(--text-700)">表格正文与表单输入</span></div>
+      <div><span>11.5 / 400</span><span style="font-size:11.5px;color:var(--text-500)">表头、说明、元信息</span></div>
+    </div>
+  </section>
+
+  <section class="sg__section">
+    <h2>组件</h2>
+    <p>组件以规则线、方形印章与权限码为核心。圆角只保留 2–3px，不使用阴影堆叠与胶囊标签。</p>
+    <div class="sg__grid">
+      <div class="sg__box">
+        <h3>按钮</h3>
+        <div class="sg__row">
+          <button class="btn btn--primary">新建用户</button>
+          <button class="btn btn--ghost">取消</button>
+          <button class="btn btn--quiet">查看详情</button>
+        </div>
+        <div class="sg__row">
+          <button class="btn btn--danger">确认删除</button>
+          <button class="btn btn--primary" disabled>无权限</button>
+          <button class="btn btn--ghost btn--sm">小号</button>
+        </div>
+        <div class="sg__row">
+          <button class="btn btn--primary" style="outline:2px solid var(--brass-500);outline-offset:2px">键盘焦点</button>
+        </div>
+      </div>
+
+      <div class="sg__box">
+        <h3>状态</h3>
+        <div class="sg__row">
+          <span class="stamp stamp--on">启用</span>
+          <span class="stamp stamp--run">运行中</span>
+          <span class="stamp stamp--draft">草稿</span>
+          <span class="stamp stamp--off">已停止</span>
+          <span class="stamp stamp--deny">无权</span>
+        </div>
+        <div class="sg__row">
+          <span class="chip chip--role">运营</span>
+          <span class="chip chip--super">超级管理员</span>
+          <span class="chip chip--muted">未分配角色</span>
+        </div>
+        <div class="sg__row">
+          <code class="code">agent:list</code>
+          <code class="code code--grant">role:assign</code>
+          <code class="code code--deny">tool:delete</code>
+        </div>
+      </div>
+
+      <div class="sg__box">
+        <h3>表单</h3>
+        <div class="field">
+          <label for="sg-input">角色名称</label>
+          <input class="input" id="sg-input" value="只读审计">
+          <div class="field__hint">角色码用于授权判定，创建后不可修改。</div>
+        </div>
+        <label class="check"><input type="checkbox" checked> <span>允许访问权限目录<small>授予 permission:list</small></span></label>
+      </div>
+
+      <div class="sg__box">
+        <h3>403 印章与提示</h3>
+        <div style="display:flex;gap:20px;align-items:center">
+          <div class="seal seal--sm" aria-hidden="true">
+            <span>无</span><span>权</span><span>访</span><span>问</span>
+            <small>辰光 · 权限判定</small>
+          </div>
+          <div style="max-width:220px">
+            <div class="toast" style="animation:none;max-width:100%;margin-bottom:8px">权限变更已保存</div>
+            <div class="toast toast--deny" style="animation:none;max-width:100%">无权限执行此操作</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sg__box" style="margin-top:20px">
+      <h3>表格与权限码</h3>
+      <div class="table-wrap">
+        <table class="table table--compact">
+          <thead>
+            <tr><th>用户</th><th>角色</th><th>权限码</th><th>状态</th><th>操作</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="cell-user"><span class="avatar avatar--brass">林</span><div><div class="cell-user__name">林恪</div><div class="cell-user__meta">admin</div></div></div></td>
+              <td><span class="chips"><span class="chip chip--role chip--super">超级管理员</span></span></td>
+              <td><code class="code">*</code></td>
+              <td><span class="stamp stamp--on">启用</span></td>
+              <td><div class="row-actions"><button class="act">分配角色</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="cell-user"><span class="avatar">张</span><div><div class="cell-user__name">张岚</div><div class="cell-user__meta">zhang.lan</div></div></div></td>
+              <td><span class="chips"><span class="chip chip--role">运营</span></span></td>
+              <td><code class="code">agent:list</code></td>
+              <td><span class="stamp stamp--on">启用</span></td>
+              <td><div class="row-actions"><button class="act">分配角色</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="cell-user"><span class="avatar avatar--stone">陈</span><div><div class="cell-user__name">陈默</div><div class="cell-user__meta">chen.mo</div></div></div></td>
+              <td><span class="chip chip--muted">未分配角色</span></td>
+              <td><code class="code">—</code></td>
+              <td><span class="stamp stamp--on">启用</span></td>
+              <td><div class="row-actions"><button class="act">分配角色</button></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="sg__section">
+    <h2>权限码与判定</h2>
+    <p>权限码格式为 <code class="code">模块:动作</code>，全局唯一。比较为精确匹配，不做前缀匹配；未匹配到任何权限时默认拒绝。</p>
+    <div class="sg__grid">
+      <div class="sg__box">
+        <h3>通配规则</h3>
+        <div class="table-wrap">
+          <table class="table table--compact">
+            <thead><tr><th>写法</th><th>含义</th><th>使用范围</th></tr></thead>
+            <tbody>
+              <tr><td><code class="code">agent:list</code></td><td>精确匹配一个动作</td><td>自定义角色</td></tr>
+              <tr><td><code class="code">agent:*</code></td><td>该模块全部动作</td><td>模块负责人</td></tr>
+              <tr><td><code class="code">*</code></td><td>全部权限</td><td>仅 admin 角色</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="sg__box">
+        <h3>判定顺序</h3>
+        <ol class="sg__notes sg__notes--num">
+          <li>缺少 token、非法或过期 → 401</li>
+          <li>用户不存在或已禁用 → 401</li>
+          <li><code class="code">is_superuser=true</code> → 放行</li>
+          <li>命中 <code class="code">*</code>、<code class="code">模块:*</code> 或精确权限码 → 放行</li>
+          <li>否则 → 403，业务逻辑不执行</li>
+        </ol>
+      </div>
+    </div>
+    <div class="sg__code-block">
+      <i>// 前端只决定“看不看得见”，后端决定“做不做得成”</i><br>
+      &lt;button <b>data-perm</b>="agent:create"&gt;新建 Agent&lt;/button&gt;<br>
+      <i>// has('agent:create') → 隐藏；接口仍可能返回 403</i>
+    </div>
+  </section>
+
+  <section class="sg__section">
+    <h2>间距、形状与动效</h2>
+    <p>间距取 4 的倍数，常用 8 / 12 / 16 / 20 / 24 / 32。面板 1px 边框、3px 圆角、无阴影；仅对话框使用大阴影。</p>
+    <div class="sg__grid">
+      <div class="sg__box">
+        <h3>间距</h3>
+        <div class="sg__row"><span style="width:8px;height:20px;background:var(--brass-300)"></span><span style="font-family:var(--font-mono);font-size:11px">8</span><span style="width:16px;height:20px;background:var(--brass-300)"></span><span style="font-family:var(--font-mono);font-size:11px">16</span><span style="width:24px;height:20px;background:var(--brass-300)"></span><span style="font-family:var(--font-mono);font-size:11px">24</span><span style="width:32px;height:20px;background:var(--brass-300)"></span><span style="font-family:var(--font-mono);font-size:11px">32</span></div>
+        <div class="sg__row" style="margin-top:12px"><span style="width:64px;height:32px;border:1px solid var(--line-strong);border-radius:2px;display:grid;place-items:center;font-family:var(--font-mono);font-size:10px">2px</span><span style="width:64px;height:32px;border:1px solid var(--line-strong);border-radius:3px;display:grid;place-items:center;font-family:var(--font-mono);font-size:10px">3px</span><span style="width:64px;height:32px;border:1px solid var(--line-strong);border-radius:50%;display:grid;place-items:center;font-family:var(--font-mono);font-size:10px">头像</span></div>
+      </div>
+      <div class="sg__box">
+        <h3>动效</h3>
+        <ul class="sg__notes">
+          <li>页面标题下的黄铜规则线在加载时从左展开 550ms，全页仅此一处自动动效。</li>
+          <li>悬停与焦点过渡 150ms；对话框进入 180ms。</li>
+          <li><code class="code">prefers-reduced-motion</code> 下关闭全部动画与过渡。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="sg__section">
+    <h2>可访问性</h2>
+    <div class="sg__grid">
+      <div class="sg__box">
+        <h3>已落实</h3>
+        <ul class="sg__notes">
+          <li>正文与次要文字对比度 ≥ 4.5:1；朱砂仅用于 12px 以上的强调文字。</li>
+          <li>所有可交互元素有可见的 2px 黄铜焦点环（偏移 2px）。</li>
+          <li>状态不只靠颜色：印章带圆点与文字，权限码带等宽字符。</li>
+          <li>表格使用语义化 <code class="code">thead/th</code>，表单控件均有 <code class="code">label</code>；对话框有 <code class="code">role=dialog</code> 与 <code class="code">aria-modal</code>。</li>
+          <li>图标按钮均带 <code class="code">aria-label</code>。</li>
+        </ul>
+      </div>
+      <div class="sg__box">
+        <h3>刻意避免</h3>
+        <ul class="sg__notes">
+          <li>通用蓝色 SaaS 后台与同质化圆角卡片堆叠。</li>
+          <li>渐变装饰、胶囊标签、全大写标签与多余的分隔圆点。</li>
+          <li>无意义的 01 / 02 编号（仅页面清单与流程使用）。</li>
+          <li>每个区块的淡入上浮与卡片逐个悬停放大。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="cover__foot" style="margin-top:44px">
+    <span>辰光 Agent · RBAC 原型样式规范</span>
+    <a href="index.html" style="color:var(--pine-700)">返回原型导览</a>
+  </div>
+</div>
+</body>
+</html>

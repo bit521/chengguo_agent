@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>用户管理 · 辰光 Agent</title>
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body data-page="users" data-title="用户管理" data-group="系统管理" data-perm="user:list">
+<div id="proto-bar"></div>
+
+<div class="app">
+  <aside id="sidebar"></aside>
+  <div class="main">
+    <header id="topbar"></header>
+    <main class="content">
+      <div class="page">
+        <header class="page-head">
+          <div>
+            <h1>用户管理</h1>
+            <p class="sub">维护账号、角色归属与启用状态。有效权限是所有角色权限的并集，没有角色就没有业务权限。</p>
+          </div>
+          <div class="page-head__actions">
+            <button class="btn btn--primary" data-perm="user:create" data-open-dialog="create-dialog">新建用户</button>
+          </div>
+        </header>
+        <div class="page-rule"></div>
+
+        <div class="ledger">
+          <div class="ledger__cell"><span>账号总数</span><b id="user-total">24</b><i>7 个在本页</i></div>
+          <div class="ledger__cell"><span>角色</span><b>4</b><i>2 内置 · 2 自定义</i></div>
+          <div class="ledger__cell"><span>未分配角色</span><b>3</b><i>登录后仅见工作台</i></div>
+          <div class="ledger__cell"><span>已禁用</span><b>2</b><i>下次请求返回 401</i></div>
+        </div>
+
+        <section class="panel">
+          <div class="panel__head">
+            <h2>账号列表</h2>
+            <span class="count" id="user-count">7</span>
+            <div class="panel__tools">
+              <label class="search">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>
+                <input class="input" id="user-search" type="search" placeholder="搜索姓名、账号或角色" aria-label="搜索用户">
+              </label>
+              <div class="seg" role="group" aria-label="按状态筛选">
+                <button class="seg__btn is-active" data-filter="all">全部<em>7</em></button>
+                <button class="seg__btn" data-filter="on">启用<em>6</em></button>
+                <button class="seg__btn" data-filter="off">已禁用<em>1</em></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel__body panel__body--flush">
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>用户</th>
+                    <th>邮箱</th>
+                    <th>角色</th>
+                    <th>状态</th>
+                    <th>最近登录</th>
+                    <th id="user-actions-th">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="user-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel__foot">
+            <span>第 1 页 / 共 4 页 · 每页 7 条</span>
+            <div class="pager" aria-label="分页">
+              <button disabled aria-label="上一页">上一页</button>
+              <button class="is-active">1</button>
+              <button>2</button>
+              <button>3</button>
+              <button>4</button>
+              <button aria-label="下一页">下一页</button>
+            </div>
+          </div>
+          <div class="panel__note">
+            <span class="protected-note">当前后端没有编辑用户接口，因此本页不提供“编辑”；<code class="code">user:update</code> 为预留权限。</span>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- 分配角色 -->
+<div class="dialog-backdrop" id="assign-dialog" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="assign-title">
+    <header class="dialog__head">
+      <div>
+        <h2 id="assign-title">分配角色</h2>
+        <p id="assign-sub">为用户选择角色，保存后即生效。</p>
+      </div>
+      <button class="dialog__close" data-close-dialog aria-label="关闭">✕</button>
+    </header>
+    <div class="dialog__body">
+      <div class="role-options" id="role-options"></div>
+      <div class="dialog__note">
+        有效权限是所选角色的并集。角色变更在下一次请求生效，无需重新登录；界面在刷新后更新。
+        没有角色的账号只保留工作台与个人设置入口。
+      </div>
+      <div class="field__hint" style="margin-top:12px">
+        所需权限 <code class="code">role:assign</code>
+      </div>
+    </div>
+    <footer class="dialog__foot">
+      <button class="btn btn--ghost" data-close-dialog>取消</button>
+      <button class="btn btn--primary" id="assign-save" data-perm="role:assign">保存角色</button>
+    </footer>
+  </div>
+</div>
+
+<!-- 新建用户 -->
+<div class="dialog-backdrop" id="create-dialog" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="create-title">
+    <header class="dialog__head">
+      <div>
+        <h2 id="create-title">新建用户</h2>
+        <p>创建后账号默认没有角色，需要再分配角色才能访问业务模块。</p>
+      </div>
+      <button class="dialog__close" data-close-dialog aria-label="关闭">✕</button>
+    </header>
+    <div class="dialog__body">
+      <form id="create-form" novalidate>
+        <div class="form-grid">
+          <div class="field">
+            <label for="new-name">姓名</label>
+            <input class="input" id="new-name" name="name" placeholder="如：赵一" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="new-account">登录账号</label>
+            <input class="input" id="new-account" name="account" placeholder="如：zhao.yi" autocomplete="off">
+          </div>
+        </div>
+        <div class="field">
+          <label for="new-email">邮箱</label>
+          <input class="input" id="new-email" name="email" type="email" placeholder="name@chenguang.ai" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="new-password">初始密码</label>
+          <input class="input" id="new-password" name="password" type="password" placeholder="至少 6 位">
+          <div class="field__hint">密码规则沿用现有后端，不在本次改造范围。</div>
+        </div>
+        <div class="field__error" id="create-error" hidden>请填写姓名、账号与初始密码。</div>
+      </form>
+    </div>
+    <footer class="dialog__foot">
+      <button class="btn btn--ghost" data-close-dialog>取消</button>
+      <button class="btn btn--primary" id="create-save">创建用户</button>
+    </footer>
+  </div>
+</div>
+
+<!-- 删除用户 -->
+<div class="dialog-backdrop" id="delete-user-dialog" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="delete-user-title">
+    <header class="dialog__head">
+      <div>
+        <h2 id="delete-user-title">删除用户</h2>
+        <p>删除后该账号立即失效，关联的用户角色关系一并移除。</p>
+      </div>
+      <button class="dialog__close" data-close-dialog aria-label="关闭">✕</button>
+    </header>
+    <div class="dialog__body">
+      <div class="dialog__warn">
+        即将删除「<b id="delete-user-name">—</b>」。该操作不可恢复。
+      </div>
+      <p style="font-size:12.5px;color:var(--text-500)">所需权限 <code class="code">user:delete</code>。原型不会写入数据。</p>
+    </div>
+    <footer class="dialog__foot">
+      <button class="btn btn--ghost" data-close-dialog>取消</button>
+      <button class="btn btn--danger" id="delete-user-save">确认删除</button>
+    </footer>
+  </div>
+</div>
+
+<div id="toasts" class="toasts"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var state = { filter: "all", keyword: "" };
+  var totalUsers = 24;
+  var activeAccount = null;
+  var body = document.getElementById("user-body");
+
+  function roleChips(roles) {
+    if (!roles.length) {
+      return '<span class="chip chip--muted">未分配角色</span>';
+    }
+    return '<span class="chips">' + roles.map(function (code) {
+      var name = CG.roleName(code);
+      var cls = code === "admin" ? "chip chip--role chip--super" : "chip chip--role";
+      return '<span class="' + cls + '">' + name + "</span>";
+    }).join("") + "</span>";
+  }
+
+  function render() {
+    var keyword = state.keyword.trim().toLowerCase();
+    var canAct = CG.has("role:assign") || CG.has("user:delete");
+    var actionsTh = document.getElementById("user-actions-th");
+    if (actionsTh) { actionsTh.hidden = !canAct; }
+    var rows = USERS.filter(function (u) {
+      var okStatus = state.filter === "all" || u.status === state.filter;
+      var roleText = u.roles.map(CG.roleName).join(" ");
+      var okText = !keyword ||
+        (u.name + u.account + u.email + roleText).toLowerCase().indexOf(keyword) !== -1;
+      return okStatus && okText;
+    });
+
+    body.innerHTML = rows.map(function (u) {
+      return "<tr>" +
+        '<td><div class="cell-user"><span class="avatar' + (u.tone ? " avatar--" + u.tone : "") + '">' +
+        u.initials + '</span><div><div class="cell-user__name">' + u.name +
+        '</div><div class="cell-user__meta">' + u.account + "</div></div></div></td>" +
+        '<td class="muted">' + u.email + "</td>" +
+        "<td>" + roleChips(u.roles) + "</td>" +
+        '<td><span class="stamp stamp--' + (u.status === "on" ? "on" : "off") + '">' +
+        (u.status === "on" ? "启用" : "已禁用") + "</span></td>" +
+        '<td class="num muted">' + u.last + "</td>" +
+        (canAct
+          ? '<td><div class="row-actions">' +
+            '<button class="act" data-perm="role:assign" data-assign="' + u.account + '">分配角色</button>' +
+            '<button class="act act--danger" data-perm="user:delete" data-delete="' + u.account + '">删除</button>' +
+            "</div></td>"
+          : "") +
+        "</tr>";
+    }).join("");
+
+    document.getElementById("user-count").textContent = rows.length;
+    document.getElementById("user-total").textContent = totalUsers;
+    CG.applyGates();
+
+    body.querySelectorAll("[data-assign]").forEach(function (btn) {
+      btn.addEventListener("click", function () { openAssign(btn.getAttribute("data-assign")); });
+    });
+    body.querySelectorAll("[data-delete]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var user = USERS.filter(function (u) { return u.account === btn.getAttribute("data-delete"); })[0];
+        document.getElementById("delete-user-name").textContent = user ? user.name : "—";
+        activeAccount = btn.getAttribute("data-delete");
+        CG.openDialog("delete-user-dialog");
+      });
+    });
+  }
+
+  function openAssign(account) {
+    var user = USERS.filter(function (u) { return u.account === account; })[0];
+    if (!user) { return; }
+    activeAccount = account;
+    document.getElementById("assign-sub").textContent =
+      "为「" + user.name + " · " + account + "」选择角色，保存后下一次请求即生效。";
+
+    document.getElementById("role-options").innerHTML = ROLES.map(function (role) {
+      var checked = user.roles.indexOf(role.code) !== -1 ? " checked" : "";
+      var tag = role.builtin ? '<span class="chip chip--muted">内置</span>' : "";
+      return '<label class="role-option">' +
+        '<input type="checkbox" value="' + role.code + '"' + checked + ">" +
+        '<span class="role-option__main">' +
+        '<span class="role-option__name">' + role.name + " <code>" + role.code + "</code> " + tag + "</span>" +
+        '<span class="role-option__desc">' + role.desc + "</span></span>" +
+        '<span class="role-option__count">' + role.users + " 人</span></label>";
+    }).join("");
+
+    CG.applyGates();
+    CG.openDialog("assign-dialog");
+  }
+
+  document.getElementById("assign-save").addEventListener("click", function () {
+    var user = USERS.filter(function (u) { return u.account === activeAccount; })[0];
+    if (!user) { return; }
+    user.roles = Array.prototype.slice.call(
+      document.querySelectorAll("#role-options input:checked")
+    ).map(function (input) { return input.value; });
+    CG.closeDialog("assign-dialog");
+    render();
+    CG.toast("角色已保存（原型演示，未写入数据库）", "ok");
+  });
+
+  document.getElementById("create-save").addEventListener("click", function () {
+    var name = document.getElementById("new-name").value.trim();
+    var account = document.getElementById("new-account").value.trim();
+    var email = document.getElementById("new-email").value.trim();
+    var password = document.getElementById("new-password").value.trim();
+    var error = document.getElementById("create-error");
+
+    if (!name || !account || !password) {
+      error.hidden = false;
+      return;
+    }
+    error.hidden = true;
+    USERS.unshift({
+      name: name,
+      account: account,
+      email: email || account + "@chenguang.ai",
+      roles: [],
+      status: "on",
+      last: "—",
+      initials: name.slice(0, 1),
+      tone: "stone"
+    });
+    totalUsers += 1;
+    CG.closeDialog("create-dialog");
+    document.getElementById("create-form").reset();
+    render();
+    CG.toast("用户已创建，默认没有角色", "ok");
+  });
+
+  document.getElementById("delete-user-save").addEventListener("click", function () {
+    var idx = USERS.findIndex(function (u) { return u.account === activeAccount; });
+    if (idx !== -1) {
+      USERS.splice(idx, 1);
+      totalUsers = Math.max(0, totalUsers - 1);
+    }
+    CG.closeDialog("delete-user-dialog");
+    render();
+    CG.toast("用户已删除（原型演示，未写入数据库）", "ok");
+  });
+
+  document.querySelectorAll("[data-filter]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll("[data-filter]").forEach(function (b) { b.classList.remove("is-active"); });
+      btn.classList.add("is-active");
+      state.filter = btn.getAttribute("data-filter");
+      render();
+    });
+  });
+
+  document.getElementById("user-search").addEventListener("input", function (e) {
+    state.keyword = e.target.value;
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

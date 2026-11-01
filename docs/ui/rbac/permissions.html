@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>权限管理 · 辰光 Agent</title>
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body data-page="permissions" data-title="权限管理" data-group="系统管理" data-perm="permission:list">
+<div id="proto-bar"></div>
+
+<div class="app">
+  <aside id="sidebar"></aside>
+  <div class="main">
+    <header id="topbar"></header>
+    <main class="content">
+      <div class="page">
+        <header class="page-head">
+          <div>
+            <h1>权限管理</h1>
+            <p class="sub">权限码采用「模块:动作」格式，全局唯一。权限码创建后不可修改，名称与描述可以编辑。</p>
+          </div>
+          <div class="page-head__actions">
+            <button class="btn btn--primary" data-perm="permission:create" data-open-dialog="create-perm-dialog">新建权限</button>
+          </div>
+        </header>
+        <div class="page-rule"></div>
+
+        <div class="ledger">
+          <div class="ledger__cell"><span>权限码</span><b id="perm-total">40</b><i>8 个模块</i></div>
+          <div class="ledger__cell"><span>系统管理</span><b>13</b><i>3 个模块</i></div>
+          <div class="ledger__cell"><span>业务权限</span><b>27</b><i>5 个模块</i></div>
+          <div class="ledger__cell"><span>已授予自定义角色</span><b>17</b><i>admin 由 * 覆盖</i></div>
+        </div>
+
+        <section class="panel">
+          <div class="panel__head">
+            <h2>权限目录</h2>
+            <span class="count" id="perm-count">40</span>
+            <div class="panel__tools">
+              <label class="search">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>
+                <input class="input" id="perm-search" type="search" placeholder="搜索权限码、名称或说明" aria-label="搜索权限">
+              </label>
+              <select class="select" id="perm-module" style="width:168px;height:32px" aria-label="按模块筛选">
+                <option value="all">全部模块</option>
+                <option value="user">用户</option>
+                <option value="role">角色</option>
+                <option value="permission">权限</option>
+                <option value="agent">Agent 管理</option>
+                <option value="model">模型与供应商</option>
+                <option value="prompt">Prompt 管理</option>
+                <option value="knowledge">知识库</option>
+                <option value="tool">工具管理</option>
+              </select>
+            </div>
+          </div>
+          <div class="panel__body panel__body--flush">
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width:158px">权限码</th>
+                    <th style="width:150px">名称</th>
+                    <th>说明</th>
+                    <th style="width:210px">授予角色</th>
+                    <th id="perm-actions-th" style="width:112px">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="perm-body"></tbody>
+              </table>
+            </div>
+            <div class="empty" id="perm-empty" hidden>
+              <div class="empty__mark">—</div>
+              <h3>没有匹配的权限</h3>
+              <p>调整搜索词或切换模块后再试。权限码本身区分大小写以外的语义，不做前缀匹配。</p>
+            </div>
+          </div>
+          <div class="panel__foot">
+            <span>权限码不可修改；删除被引用的权限前需二次确认</span>
+            <span>共 40 条</span>
+          </div>
+          <div class="panel__note">
+            后端默认拒绝：没有声明权限的受保护接口不会被放行。新增接口必须同时登记权限码与接口映射。
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- 编辑权限 -->
+<div class="dialog-backdrop" id="edit-perm-dialog" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="edit-perm-title">
+    <header class="dialog__head">
+      <div>
+        <h2 id="edit-perm-title">编辑权限</h2>
+        <p>权限码不可修改，避免已授权的角色失效。</p>
+      </div>
+      <button class="dialog__close" data-close-dialog aria-label="关闭">✕</button>
+    </header>
+    <div class="dialog__body">
+      <div class="field">
+        <label for="edit-perm-code">权限码</label>
+        <input class="input" id="edit-perm-code" disabled>
+        <div class="field__hint">如需新的权限码，请新建权限并重新分配。</div>
+      </div>
+      <div class="field">
+        <label for="edit-perm-name">名称</label>
+        <input class="input" id="edit-perm-name">
+      </div>
+      <div class="field">
+        <label for="edit-perm-desc">说明</label>
+        <input class="input" id="edit-perm-desc">
+      </div>
+    </div>
+    <footer class="dialog__foot">
+      <button class="btn btn--ghost" data-close-dialog>取消</button>
+      <button class="btn btn--primary" id="edit-perm-save" data-perm="permission:update">保存</button>
+    </footer>
+  </div>
+</div>
+
+<!-- 新建权限 -->
+<div class="dialog-backdrop" id="create-perm-dialog" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="create-perm-title">
+    <header class="dialog__head">
+      <div>
+        <h2 id="create-perm-title">新建权限</h2>
+        <p>权限码由模块与动作拼成，例如 knowledge:upload。</p>
+      </div>
+      <button class="dialog__close" data-close-dialog aria-label="关闭">✕</button>
+    </header>
+    <div class="dialog__body">
+      <div class="form-grid">
+        <div class="field">
+          <label for="create-perm-module">模块</label>
+          <select class="select" id="create-perm-module"></select>
+        </div>
+        <div class="field">
+          <label for="create-perm-action">动作</label>
+          <input class="input" id="create-perm-action" placeholder="如 export" autocomplete="off">
+        </div>
+      </div>
+      <div class="field__hint" style="margin-top:-6px;margin-bottom:12px">
+        生成的权限码：<code class="code code--lg" id="new-perm-preview">module:action</code>
+      </div>
+      <div class="field">
+        <label for="create-perm-name">名称</label>
+        <input class="input" id="create-perm-name" placeholder="如：导出知识库">
+      </div>
+      <div class="field">
+        <label for="create-perm-desc">说明</label>
+        <input class="input" id="create-perm-desc" placeholder="这条权限允许什么操作">
+      </div>
+      <div class="field__error" id="create-perm-error" hidden>请检查名称与动作；权限码需为「模块:动作」且不能重复。</div>
+      <div class="dialog__note">
+        推荐动作：list、create、update、delete、publish、execute、assign、upload、retrieval、test。
+      </div>
+    </div>
+    <footer class="dialog__foot">
+      <button class="btn btn--ghost" data-close-dialog>取消</button>
+      <button class="btn btn--primary" id="create-perm-save" data-perm="permission:create">创建权限</button>
+    </footer>
+  </div>
+</div>
+
+<!-- 删除权限 -->
+<div class="dialog-backdrop" id="delete-perm-dialog" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="delete-perm-title">
+    <header class="dialog__head">
+      <div>
+        <h2 id="delete-perm-title">删除权限</h2>
+        <p>删除后，角色对该权限的关联关系会一并移除。</p>
+      </div>
+      <button class="dialog__close" data-close-dialog aria-label="关闭">✕</button>
+    </header>
+    <div class="dialog__body">
+      <div class="dialog__warn">
+        即将删除权限码 <code id="delete-perm-code" style="color:inherit">—</code>。
+        <span id="delete-perm-impact"></span>
+      </div>
+      <p style="font-size:12.5px;color:var(--text-500)">
+        所需权限 <code class="code">permission:delete</code>。后端按现有外键级联清理关联关系；原型不会写入数据。
+      </p>
+    </div>
+    <footer class="dialog__foot">
+      <button class="btn btn--ghost" data-close-dialog>取消</button>
+      <button class="btn btn--danger" id="delete-perm-save">确认删除</button>
+    </footer>
+  </div>
+</div>
+
+<div id="toasts" class="toasts"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var state = { module: "all", keyword: "" };
+  var body = document.getElementById("perm-body");
+  var empty = document.getElementById("perm-empty");
+
+  function rolesHolding(code) {
+    return ROLES.filter(function (role) {
+      if (role.code === "admin") { return false; }
+      return role.perms.indexOf(code) !== -1;
+    });
+  }
+
+  function render() {
+    var keyword = state.keyword.trim().toLowerCase();
+    var canAct = CG.has("permission:update") || CG.has("permission:delete");
+    var actionsTh = document.getElementById("perm-actions-th");
+    if (actionsTh) { actionsTh.hidden = !canAct; }
+    var html = "";
+    var total = 0;
+
+    MODULES.forEach(function (mod) {
+      if (state.module !== "all" && state.module !== mod.key) { return; }
+      var items = PERMISSIONS.filter(function (p) {
+        if (p.module !== mod.key) { return false; }
+        if (!keyword) { return true; }
+        return (p.code + p.name + p.desc).toLowerCase().indexOf(keyword) !== -1;
+      });
+      if (!items.length) { return; }
+      total += items.length;
+
+      html += '<tbody class="perm-group" data-module="' + mod.key + '">' +
+        '<tr><td colspan="' + (canAct ? 5 : 4) + '" style="padding:0;border:0">' +
+        '<div class="perm-group__head"><code>' + mod.key + '</code><b>' + mod.name + "</b>" +
+        '<span>' + items.length + " 条 · " + mod.group + "</span></div></td></tr>" +
+        items.map(function (p) {
+          var holders = rolesHolding(p.code);
+          var holderHtml = holders.length
+            ? holders.map(function (r) { return '<span class="chip chip--role">' + r.name + "</span>"; }).join("")
+            : '<span class="chip chip--muted">仅 admin（*）</span>';
+          return "<tr>" +
+            '<td><code class="code">' + p.code + "</code></td>" +
+            "<td>" + p.name + "</td>" +
+            '<td class="perm-desc">' + p.desc + "</td>" +
+            '<td><div class="chips">' + holderHtml + "</div></td>" +
+            (canAct
+              ? '<td><div class="row-actions">' +
+                '<button class="act" data-perm="permission:update" data-edit="' + p.code + '">编辑</button>' +
+                '<button class="act act--danger" data-perm="permission:delete" data-delete="' + p.code + '">删除</button>' +
+                "</div></td>"
+              : "") +
+            "</tr>";
+        }).join("") + "</tbody>";
+    });
+
+    body.innerHTML = html;
+    document.getElementById("perm-count").textContent = total;
+    document.getElementById("perm-total").textContent = PERMISSIONS.length;
+    empty.hidden = total !== 0;
+    CG.applyGates();
+
+    body.querySelectorAll("[data-edit]").forEach(function (btn) {
+      btn.addEventListener("click", function () { openEdit(btn.getAttribute("data-edit")); });
+    });
+    body.querySelectorAll("[data-delete]").forEach(function (btn) {
+      btn.addEventListener("click", function () { openDelete(btn.getAttribute("data-delete")); });
+    });
+  }
+
+  function openEdit(code) {
+    var perm = PERMISSIONS.filter(function (p) { return p.code === code; })[0];
+    if (!perm) { return; }
+    document.getElementById("edit-perm-code").value = perm.code;
+    document.getElementById("edit-perm-name").value = perm.name;
+    document.getElementById("edit-perm-desc").value = perm.desc;
+    document.getElementById("edit-perm-dialog").dataset.code = code;
+    CG.openDialog("edit-perm-dialog");
+  }
+
+  document.getElementById("edit-perm-save").addEventListener("click", function () {
+    var code = document.getElementById("edit-perm-dialog").dataset.code;
+    var perm = PERMISSIONS.filter(function (p) { return p.code === code; })[0];
+    if (!perm) { return; }
+    perm.name = document.getElementById("edit-perm-name").value.trim() || perm.name;
+    perm.desc = document.getElementById("edit-perm-desc").value.trim();
+    CG.closeDialog("edit-perm-dialog");
+    render();
+    CG.toast("权限名称与描述已更新（原型演示）", "ok");
+  });
+
+  var moduleSelect = document.getElementById("create-perm-module");
+  moduleSelect.innerHTML = MODULES.map(function (m) {
+    return '<option value="' + m.key + '">' + m.key + " · " + m.name + "</option>";
+  }).join("");
+
+  function updatePreview() {
+    var mod = moduleSelect.value;
+    var action = document.getElementById("create-perm-action").value.trim() || "action";
+    document.getElementById("new-perm-preview").textContent = mod + ":" + action;
+  }
+  moduleSelect.addEventListener("change", updatePreview);
+  document.getElementById("create-perm-action").addEventListener("input", updatePreview);
+
+  document.getElementById("create-perm-save").addEventListener("click", function () {
+    var mod = moduleSelect.value;
+    var action = document.getElementById("create-perm-action").value.trim();
+    var name = document.getElementById("create-perm-name").value.trim();
+    var desc = document.getElementById("create-perm-desc").value.trim();
+    var code = mod + ":" + action;
+    var error = document.getElementById("create-perm-error");
+    var validAction = /^[a-z][a-z0-9_]*$/.test(action);
+    var duplicate = PERMISSIONS.some(function (p) { return p.code === code; });
+    if (!name || !validAction || duplicate) {
+      error.hidden = false;
+      return;
+    }
+    error.hidden = true;
+    PERMISSIONS.push({ code: code, name: name, desc: desc || "尚未填写说明。", module: mod, action: action });
+    CG.closeDialog("create-perm-dialog");
+    document.getElementById("create-perm-action").value = "";
+    document.getElementById("create-perm-name").value = "";
+    document.getElementById("create-perm-desc").value = "";
+    updatePreview();
+    state.module = "all";
+    document.getElementById("perm-module").value = "all";
+    render();
+    CG.toast("权限已创建，可在角色矩阵中分配", "ok");
+  });
+
+  function openDelete(code) {
+    var holders = rolesHolding(code);
+    document.getElementById("delete-perm-code").textContent = code;
+    document.getElementById("delete-perm-impact").textContent = holders.length
+      ? "该权限当前授予 " + holders.length + " 个角色：" + holders.map(function (r) { return r.name; }).join("、") +
+        "。删除后这些角色不再包含该权限。"
+      : "该权限没有其他角色显式引用，仅由 admin 的 * 通配覆盖。";
+    document.getElementById("delete-perm-dialog").dataset.code = code;
+    CG.openDialog("delete-perm-dialog");
+  }
+
+  document.getElementById("delete-perm-save").addEventListener("click", function () {
+    var code = document.getElementById("delete-perm-dialog").dataset.code;
+    var idx = PERMISSIONS.findIndex(function (p) { return p.code === code; });
+    if (idx !== -1) { PERMISSIONS.splice(idx, 1); }
+    ROLES.forEach(function (role) {
+      role.perms = role.perms.filter(function (p) { return p !== code; });
+    });
+    CG.closeDialog("delete-perm-dialog");
+    render();
+    CG.toast("权限已删除（原型演示，未写入数据库）", "ok");
+  });
+
+  document.getElementById("perm-search").addEventListener("input", function (e) {
+    state.keyword = e.target.value;
+    render();
+  });
+  document.getElementById("perm-module").addEventListener("change", function (e) {
+    state.module = e.target.value;
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

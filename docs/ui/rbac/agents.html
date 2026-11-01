@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent 管理 · 辰光 Agent</title>
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body data-page="agents" data-title="Agent 管理" data-group="业务" data-perm="agent:list">
+<div id="proto-bar"></div>
+
+<div class="app">
+  <aside id="sidebar"></aside>
+  <div class="main">
+    <header id="topbar"></header>
+    <main class="content">
+      <div class="page">
+        <header class="page-head">
+          <div>
+            <h1>Agent 管理</h1>
+            <p class="sub">创建、发布和运行 Agent。没有权限的操作不出现在界面上，直接调用接口仍会被后端拒绝。</p>
+          </div>
+          <div class="page-head__actions">
+            <button class="btn btn--ghost" data-perm="agent:publish" data-toast="请先勾选 Agent（原型演示）">批量发布</button>
+            <button class="btn btn--primary" data-perm="agent:create" data-toast="新建 Agent 表单不在本次原型范围" data-toast-kind="ok">新建 Agent</button>
+          </div>
+        </header>
+        <div class="page-rule"></div>
+
+        <div class="ledger">
+          <div class="ledger__cell"><span>Agent 总数</span><b>18</b><i>本页 8 条</i></div>
+          <div class="ledger__cell"><span>运行中</span><b>12</b><i>覆盖 5 个部门</i></div>
+          <div class="ledger__cell"><span>草稿</span><b>4</b><i>2 个超过 7 天</i></div>
+          <div class="ledger__cell"><span>已下线</span><b>2</b><i>保留版本快照</i></div>
+        </div>
+
+        <section class="panel">
+          <div class="panel__head">
+            <h2>Agent 列表</h2>
+            <span class="count" id="agent-count">8</span>
+            <div class="panel__tools">
+              <label class="search">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>
+                <input class="input" id="agent-search" type="search" placeholder="搜索名称、部门或负责人" aria-label="搜索 Agent">
+              </label>
+              <div class="seg" role="group" aria-label="按状态筛选">
+                <button class="seg__btn is-active" data-filter="all">全部<em>8</em></button>
+                <button class="seg__btn" data-filter="已发布">已发布<em>5</em></button>
+                <button class="seg__btn" data-filter="草稿">草稿<em>2</em></button>
+                <button class="seg__btn" data-filter="已下线">已下线<em>1</em></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel__body panel__body--flush">
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Agent</th>
+                    <th>版本</th>
+                    <th>状态</th>
+                    <th>运行状态</th>
+                    <th>今日会话</th>
+                    <th>负责人</th>
+                    <th>更新时间</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="agent-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel__foot">
+            <span>共 18 个 Agent · 当前显示 8 个</span>
+            <div class="pager" aria-label="分页">
+              <button disabled aria-label="上一页">上一页</button>
+              <button class="is-active">1</button>
+              <button>2</button>
+              <button>3</button>
+              <button aria-label="下一页">下一页</button>
+            </div>
+          </div>
+          <div class="panel__note">
+            按钮可见性只影响体验，不能替代后端校验。角色权限变更后，本页按钮在刷新后更新，接口在下一次请求即生效。
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="dialog-backdrop" id="delete-dialog" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+    <header class="dialog__head">
+      <div>
+        <h2 id="delete-title">删除 Agent</h2>
+        <p>此操作会移除 Agent 及其版本快照关联。</p>
+      </div>
+      <button class="dialog__close" data-close-dialog aria-label="关闭">✕</button>
+    </header>
+    <div class="dialog__body">
+      <div class="dialog__warn">
+        即将删除「<b id="delete-agent-name">—</b>」。删除后不能恢复，正在运行的会话会被终止。
+      </div>
+      <p style="font-size:12.5px;color:var(--text-500)">
+        所需权限 <code class="code">agent:delete</code>。原型不会写入任何数据。
+      </p>
+    </div>
+    <footer class="dialog__foot">
+      <button class="btn btn--ghost" data-close-dialog>取消</button>
+      <button class="btn btn--danger" id="confirm-delete">确认删除</button>
+    </footer>
+  </div>
+</div>
+
+<div id="toasts" class="toasts"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var state = { filter: "all", keyword: "" };
+  var body = document.getElementById("agent-body");
+  var count = document.getElementById("agent-count");
+
+  var stateStamp = {
+    "已发布": "stamp--on",
+    "草稿": "stamp--draft",
+    "已下线": "stamp--off"
+  };
+  var runStamp = {
+    "运行中": "stamp--run",
+    "已停止": "stamp--off",
+    "未运行": "stamp--off stamp--plain"
+  };
+
+  function render() {
+    var rows = AGENTS.filter(function (a) {
+      var okState = state.filter === "all" || a.state === state.filter;
+      var k = state.keyword.trim().toLowerCase();
+      var okText = !k || (a.name + a.dept + a.owner).toLowerCase().indexOf(k) !== -1;
+      return okState && okText;
+    });
+
+    body.innerHTML = rows.map(function (a) {
+      var publishLabel = a.state === "已发布" ? "回滚" : "发布";
+      return "<tr>" +
+        '<td><div class="cell-user"><span class="avatar' + (a.state === "草稿" ? " avatar--stone" : "") + '">' +
+        CG.icon("bot", 15) + "</span><div><div class=\"cell-user__name\">" + a.name +
+        '</div><div class="cell-user__meta">' + a.dept + "</div></div></div></td>" +
+        '<td class="num">' + a.version + "</td>" +
+        '<td><span class="stamp ' + stateStamp[a.state] + '">' + a.state + "</span></td>" +
+        '<td><span class="stamp ' + runStamp[a.run] + '">' + a.run + "</span></td>" +
+        '<td class="num">' + a.today + "</td>" +
+        "<td>" + a.owner + "</td>" +
+        '<td class="num muted">' + a.updated.slice(5) + "</td>" +
+        '<td><div class="row-actions">' +
+        '<button class="act" data-toast="Agent 详情页不在本次原型范围">查看</button>' +
+        '<button class="act" data-perm="agent:update" data-toast="编辑表单不在本次原型范围">编辑</button>' +
+        '<button class="act" data-perm="agent:publish" data-toast="' + publishLabel + '操作已提交（原型演示）" data-toast-kind="ok">' + publishLabel + "</button>" +
+        '<button class="act" data-perm="agent:execute" data-toast="' + (a.run === "运行中" ? "已发送停止指令" : "已发送启动指令") + '（原型演示）">' + (a.run === "运行中" ? "停止" : "启动") + "</button>" +
+        '<button class="act act--danger" data-perm="agent:delete" data-agent="' + a.name + '">删除</button>' +
+        "</div></td></tr>";
+    }).join("");
+
+    count.textContent = rows.length;
+    CG.applyGates();
+    body.querySelectorAll("[data-agent]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        document.getElementById("delete-agent-name").textContent = btn.getAttribute("data-agent");
+        CG.openDialog("delete-dialog");
+      });
+    });
+  }
+
+  document.querySelectorAll("[data-filter]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll("[data-filter]").forEach(function (b) { b.classList.remove("is-active"); });
+      btn.classList.add("is-active");
+      state.filter = btn.getAttribute("data-filter");
+      render();
+    });
+  });
+
+  document.getElementById("agent-search").addEventListener("input", function (e) {
+    state.keyword = e.target.value;
+    render();
+  });
+
+  document.getElementById("confirm-delete").addEventListener("click", function () {
+    CG.closeDialog("delete-dialog");
+    CG.toast("删除请求已提交（原型不写入数据）", "ok");
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

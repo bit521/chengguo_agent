@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RBAC 原型导览 · 辰光 Agent</title>
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+<div class="cover">
+  <div class="cover__top">
+    <div class="mark">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 17.5h18"/><circle cx="12" cy="11.5" r="5"/><path d="M12 2.5v2M4.6 5.2l1.4 1.4M19.4 5.2L18 6.6"/>
+      </svg>
+    </div>
+    <b>辰光 Agent 平台</b>
+    <div class="meta">
+      RBAC 授权界面原型 · V2.0<br>
+      2026-10-27 · 基线 PROJECT_SPEC_V2（2026-10-25）
+    </div>
+  </div>
+
+  <div class="cover__hero">
+    <div class="cover__rail" aria-hidden="true"></div>
+    <div>
+      <h1>每一次访问，<br>先判定，再呈现。</h1>
+      <p class="cover__lede">
+        这份原型把权限从「被存储」接到「被判定」。登录后加载角色与权限码，菜单、路由与操作按钮按权限呈现；
+        越权直达展示 403，而不是先渲染页面再报错。原型覆盖 PROJECT_SPEC_V2 的全部前端授权要求。
+      </p>
+      <div class="cover__facts">
+        <div class="cover__fact"><b>9</b>静态页面</div>
+        <div class="cover__fact"><b>40</b>权限码</div>
+        <div class="cover__fact"><b>4</b>可切换身份</div>
+        <div class="cover__fact"><b>2</b>套产物：页面与图片</div>
+        <div class="cover__fact"><b>0</b>构建步骤</div>
+      </div>
+      <div class="cover__links">
+        <a class="btn btn--primary" href="login.html?stay=1">从登录页开始</a>
+        <a class="btn btn--ghost" href="dashboard.html">打开工作台</a>
+        <a class="btn btn--ghost" href="styleguide.html">样式规范</a>
+      </div>
+    </div>
+  </div>
+
+  <section class="cover__section">
+    <header>
+      <h2>页面清单</h2>
+      <p>共 9 个静态页面，直接双击 HTML 即可打开</p>
+      <span class="idx">01</span>
+    </header>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th style="width:46px">序号</th><th>页面</th><th>说明</th><th style="width:130px">所需权限</th><th style="width:60px">打开</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="num muted">01</td>
+            <td class="t-page">原型导览</td>
+            <td class="t-desc">页面清单、身份可见性对照与视觉令牌</td>
+            <td><code class="code">仅登录</code></td>
+            <td><a class="open" href="index.html">当前</a></td>
+          </tr>
+          <tr>
+            <td class="num muted">02</td>
+            <td class="t-page">登录</td>
+            <td class="t-desc">验证码 + JWT，登录后加载角色与权限</td>
+            <td><code class="code">公开</code></td>
+            <td><a class="open" href="login.html?stay=1">打开</a></td>
+          </tr>
+          <tr>
+            <td class="num muted">03</td>
+            <td class="t-page">工作台</td>
+            <td class="t-desc">当前身份的访问范围、最近活动与待办</td>
+            <td><code class="code">仅登录</code></td>
+            <td><a class="open" href="dashboard.html">打开</a></td>
+          </tr>
+          <tr>
+            <td class="num muted">04</td>
+            <td class="t-page">Agent 管理</td>
+            <td class="t-desc">创建、编辑、发布、运行、删除按钮按权限隐藏</td>
+            <td><code class="code">agent:list</code></td>
+            <td><a class="open" href="agents.html">打开</a></td>
+          </tr>
+          <tr>
+            <td class="num muted">05</td>
+            <td class="t-page">用户管理</td>
+            <td class="t-desc">分配角色、创建用户；user:update 为预留权限</td>
+            <td><code class="code">user:list</code></td>
+            <td><a class="open" href="users.html">打开</a></td>
+          </tr>
+          <tr>
+            <td class="num muted">06</td>
+            <td class="t-page">角色管理</td>
+            <td class="t-desc">8 个模块的权限矩阵，admin 角色受保护</td>
+            <td><code class="code">role:list</code></td>
+            <td><a class="open" href="roles.html">打开</a></td>
+          </tr>
+          <tr>
+            <td class="num muted">07</td>
+            <td class="t-page">权限管理</td>
+            <td class="t-desc">40 条权限目录，权限码不可修改</td>
+            <td><code class="code">permission:list</code></td>
+            <td><a class="open" href="permissions.html">打开</a></td>
+          </tr>
+          <tr>
+            <td class="num muted">08</td>
+            <td class="t-page">403 页面</td>
+            <td class="t-desc">越权直达、返回工作台、保留登录态</td>
+            <td><code class="code">仅登录</code></td>
+            <td><a class="open" href="forbidden.html?from=users.html&amp;need=user%3Alist&amp;title=%E7%94%A8%E6%88%B7%E7%AE%A1%E7%90%86&amp;as=operator">打开</a></td>
+          </tr>
+          <tr>
+            <td class="num muted">09</td>
+            <td class="t-page">样式规范</td>
+            <td class="t-desc">颜色、字体、组件与状态规范</td>
+            <td><code class="code">仅登录</code></td>
+            <td><a class="open" href="styleguide.html">打开</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="cover__section">
+    <header>
+      <h2>身份与可见性</h2>
+      <p>菜单隐藏，直达 403；接口侧仍独立校验</p>
+      <span class="idx">02</span>
+    </header>
+    <div class="table-wrap">
+      <table class="table cover__matrix">
+        <thead>
+          <tr>
+            <th>页面 / 分组</th>
+            <th>超级管理员</th>
+            <th>运营</th>
+            <th>只读审计</th>
+            <th>无角色</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>工作台</td><td class="yes">可见</td><td class="yes">可见</td><td class="yes">可见</td><td class="yes">可见</td></tr>
+          <tr><td>Agent 管理</td><td class="yes">可见</td><td class="yes">可见</td><td class="yes">可见</td><td class="no">直达 403</td></tr>
+          <tr><td>用户管理</td><td class="yes">可见</td><td class="no">直达 403</td><td class="yes">只读</td><td class="no">直达 403</td></tr>
+          <tr><td>角色管理</td><td class="yes">可见</td><td class="no">直达 403</td><td class="yes">只读</td><td class="no">直达 403</td></tr>
+          <tr><td>权限管理</td><td class="yes">可见</td><td class="no">直达 403</td><td class="yes">只读</td><td class="no">直达 403</td></tr>
+          <tr><td>系统管理分组</td><td class="yes">显示</td><td class="na">整体隐藏</td><td class="yes">显示</td><td class="na">整体隐藏</td></tr>
+          <tr><td>API 密钥 / 审计 / 告警 / 配置</td><td class="yes">可见</td><td class="na">隐藏</td><td class="na">隐藏</td><td class="na">隐藏</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="panel__note" style="margin-top:14px;border:1px solid var(--line);background:var(--stone-50)">
+      评审方式：使用任意页面顶部的「查看身份」切换身份，菜单与按钮会立即按新权限重绘；
+      勾选「标注受限操作」，隐藏的按钮会以虚线显示并标注所需权限码；在运营身份下直接打开用户管理，可看到 403 页面。
+    </div>
+  </section>
+
+  <section class="cover__section">
+    <header>
+      <h2>视觉语言</h2>
+      <p>授权台账：规则线、印章式状态、权限码作为结构</p>
+      <span class="idx">03</span>
+    </header>
+    <p style="margin-top:14px;max-width:64ch;font-size:13px;line-height:1.9;color:var(--text-600)">
+      这是一套为企业权限管理设计的工作界面，不是通用 SaaS 卡片后台。墨绿承担导航与允许，朱砂只用于拒绝与删除，
+      黄铜标记当前身份与页面强调；状态使用方正的印章式标签，权限码使用等宽字体，让「规则」本身成为视觉结构。
+    </p>
+    <div class="token-strip">
+      <div class="token">
+        <div class="token__swatch" style="background:#17231E"></div>
+        <div class="token__meta"><b>墨</b><code>#17231E · 导航与标题</code></div>
+      </div>
+      <div class="token">
+        <div class="token__swatch" style="background:#14503F"></div>
+        <div class="token__meta"><b>松</b><code>#14503F · 允许与主操作</code></div>
+      </div>
+      <div class="token">
+        <div class="token__swatch" style="background:#B08442"></div>
+        <div class="token__meta"><b>黄铜</b><code>#B08442 · 当前身份</code></div>
+      </div>
+      <div class="token">
+        <div class="token__swatch" style="background:#A6402F"></div>
+        <div class="token__meta"><b>朱砂</b><code>#A6402F · 拒绝与删除</code></div>
+      </div>
+      <div class="token">
+        <div class="token__swatch" style="background:#EDEFE9;border-bottom:1px solid #DCDED5"></div>
+        <div class="token__meta"><b>石</b><code>#EDEFE9 · 页面底色</code></div>
+      </div>
+    </div>
+    <div class="cover__links" style="margin-top:18px">
+      <a class="btn btn--ghost" href="styleguide.html">查看完整令牌与组件</a>
+      <a class="btn btn--ghost" href="../../design/ui/RBAC-UI-Design-Spec.md">原型设计说明书</a>
+    </div>
+  </section>
+
+  <section class="cover__section">
+    <header>
+      <h2>产物</h2>
+      <p>静态页面与评审图片两套，均位于 docs/ui/rbac</p>
+      <span class="idx">04</span>
+    </header>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>产物</th><th>位置</th><th>说明</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="t-page">静态页面</td>
+            <td class="t-code">docs/ui/rbac/*.html</td>
+            <td class="t-desc">HTML + CSS + JavaScript，无构建、无外部依赖</td>
+          </tr>
+          <tr>
+            <td class="t-page">页面图片</td>
+            <td class="t-code">docs/ui/rbac/images/*.png</td>
+            <td class="t-desc">各页面在指定身份下的整页截图，含标注模式与移动端</td>
+          </tr>
+          <tr>
+            <td class="t-page">设计说明书</td>
+            <td class="t-code">docs/design/ui/</td>
+            <td class="t-desc">令牌、组件、页面、权限映射、交互与落地建议</td>
+          </tr>
+          <tr>
+            <td class="t-page">评审说明</td>
+            <td class="t-code">docs/ui/rbac/README.md</td>
+            <td class="t-desc">打开方式、身份切换、图片清单与实现对应</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="cover__foot">
+    <span>辰光 Agent 平台 · RBAC 授权界面原型 · 静态 HTML/CSS/JS</span>
+    <span>基于 PROJECT_SPEC_V2 · 2026-10-27</span>
+  </div>
+</div>
+</body>
+</html>

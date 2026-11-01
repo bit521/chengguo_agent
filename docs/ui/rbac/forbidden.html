@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>无权限访问 · 辰光 Agent</title>
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body data-page="forbidden" data-title="403" data-group="">
+<div id="proto-bar"></div>
+
+<div class="app">
+  <aside id="sidebar"></aside>
+  <div class="main">
+    <header id="topbar"></header>
+    <main class="content">
+      <div class="page page--center">
+        <div class="denied">
+          <div class="seal" aria-hidden="true">
+            <span>无</span><span>权</span><span>访</span><span>问</span>
+            <small>辰光 · 权限判定</small>
+          </div>
+          <div class="denied__body">
+            <div class="big">403</div>
+            <h1 id="denied-title">没有权限访问该页面</h1>
+            <p id="denied-desc">当前身份没有访问该页面所需的权限。页面内容未加载。</p>
+            <div class="denied__facts">
+              <span>当前身份 <b id="denied-identity">—</b></span>
+              <span>请求路径 <b id="denied-path">—</b></span>
+              <span>所需权限 <b id="denied-need">—</b></span>
+              <span>有效权限 <b id="denied-count">—</b></span>
+            </div>
+            <div class="denied__actions" id="denied-actions">
+              <a class="btn btn--primary" href="dashboard.html">返回工作台</a>
+              <a class="btn btn--ghost" href="permissions.html" data-perm="permission:list">查看我的权限</a>
+              <button class="btn btn--ghost" data-toast="联系管理员分配角色或权限；权限变更在下一次请求生效。">如何获得权限</button>
+            </div>
+            <p style="margin-top:16px;font-size:11.5px;color:var(--text-500)">
+              403 不会清除登录态，也不会自动跳转。使用顶部「查看身份」切换身份，可以对比不同权限下的界面。
+            </p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div id="toasts" class="toasts"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var me = CG.identity();
+  var params = new URLSearchParams(location.search);
+  var from = params.get("from") || "";
+  var need = params.get("need") || "";
+  var title = params.get("title") || "";
+  var granted = need === "superuser" ? me.superuser : (need ? CG.has(need) : false);
+
+  var perm = PERMISSIONS.filter(function (p) { return p.code === need; })[0];
+  var mod = need ? need.split(":")[0] : "";
+  var modDef = MODULES.filter(function (m) { return m.key === mod; })[0];
+
+  document.getElementById("denied-identity").textContent =
+    me.name + " · " + me.roleLabel;
+  document.getElementById("denied-path").textContent = from ? "/" + from : "—";
+  document.getElementById("denied-need").textContent =
+    need === "superuser" ? "仅超级管理员"
+      : need ? need + (perm ? "（" + perm.name + "）" : "") : "—";
+  document.getElementById("denied-count").textContent =
+    me.superuser ? "全部" : me.permissions.length + " 项";
+
+  if (granted) {
+    document.getElementById("denied-title").textContent = "当前身份已获得权限";
+    document.getElementById("denied-desc").textContent =
+      "权限变更后无需重新登录。当前身份已经拥有访问「" + (title || modDef && modDef.name || "该页面") +
+      "」所需的权限，可以直接前往；页面数据会在进入后重新加载。";
+    var actions = document.getElementById("denied-actions");
+    actions.innerHTML =
+      '<a class="btn btn--primary" href="' + (from || "dashboard.html") + '">前往该页面</a>' +
+      '<a class="btn btn--ghost" href="dashboard.html">返回工作台</a>';
+  } else {
+    document.getElementById("denied-desc").textContent =
+      "当前身份「" + me.roleLabel + " · " + me.name + "」没有访问「" + (title || modDef && modDef.name || "该页面") +
+      "」所需的权限。页面内容和业务数据都没有加载。";
+  }
+
+  CG.applyGates();
+})();
+</script>
+</body>
+</html>
